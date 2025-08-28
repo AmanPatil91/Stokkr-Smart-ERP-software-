@@ -1,0 +1,136 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // or "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// User & Role Management
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          String    @default("STAFF") // "ADMIN" or "STAFF"
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// Inventory Management
+
+
+// Existing Product model
+model Product {
+  id                String             @id @default(cuid())
+  name              String
+  sku               String             @unique
+  description       String?
+  price             Decimal            @db.Decimal(10, 2)
+  cost              Decimal            @db.Decimal(10, 2)
+  batches           Batch[]            // 👈 Add this relationship
+  stockTransactions StockTransaction[]
+  invoiceItems      InvoiceItem[]
+}
+
+
+model Batch {
+  id            String             @id @default(cuid())
+  batchNumber   String
+  expiryDate    DateTime
+  quantity      Int
+  costPerItem   Decimal            @db.Decimal(10, 2)
+  productId     String
+  product       Product            @relation(fields: [productId], references: [id])
+  stockTransactions StockTransaction[]
+}
+
+
+model StockTransaction {
+  id            String         @id @default(cuid())
+  productId     String
+  product       Product        @relation(fields: [productId], references: [id])
+  batchId       String?        // 👈 Add this field
+  batch         Batch?         @relation(fields: [batchId], references: [id]) // 👈 Add this relationship
+  transactionType String         // "IN" or "OUT"
+  quantity      Int
+  date          DateTime       @default(now())
+  notes         String?
+}
+
+// Accounting & Billing
+
+
+model Party {
+  id              String              @id @default(cuid())
+  name            String
+  partyType       String              // "CUSTOMER" or "SUPPLIER"
+  contactNumber   String?             // 👈 Add this field
+  email           String?             // 👈 Add this field
+  gstin           String?
+  invoices        Invoice[]
+  ledgerTransactions LedgerTransaction[]
+}
+
+model Invoice {
+  id            String        @id @default(cuid())
+  invoiceNumber String        @unique
+  invoiceType   String        // "SALES" or "PURCHASE"
+  date          DateTime      @default(now())
+  totalAmount   Decimal       @db.Decimal(10, 2)
+  partyId       String
+  party         Party         @relation(fields: [partyId], references: [id])
+  items         InvoiceItem[]
+}
+
+model InvoiceItem {
+  id            String  @id @default(cuid())
+  invoiceId     String
+  invoice       Invoice @relation(fields: [invoiceId], references: [id])
+  productId     String
+  product       Product @relation(fields: [productId], references: [id])
+  quantity      Int
+  pricePerItem  Decimal @db.Decimal(10, 2)
+  subtotal      Decimal @db.Decimal(10, 2)
+}
+
+model LedgerTransaction {
+  id            String    @id @default(cuid())
+  partyId       String
+  party         Party     @relation(fields: [partyId], references: [id])
+  transactionType String    // "DEBIT" or "CREDIT"
+  amount        Decimal   @db.Decimal(10, 2)
+  date          DateTime  @default(now())
+  description   String
+}
