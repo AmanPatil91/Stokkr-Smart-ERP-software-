@@ -1,5 +1,7 @@
+// app/api/reports/sales-summary/route.ts
+// The import statement has changed!
+import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
 
 export async function GET() {
   try {

@@ -9,7 +9,7 @@ export default function InventoryMainPage() {
         <Link href="/products/new" className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded">
           Add New Product Type
         </Link>
-        <Link href="/inventory/add-stock" className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+        <Link href="/inventory/add-batch" className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
           Add Stock in Batches
         </Link>
       </div>

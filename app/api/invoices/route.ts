@@ -1,31 +1,26 @@
 import { NextResponse } from 'next/server';
-import prisma from '../../../lib/prisma'; // Use the shared Prisma client
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { partyId, items } = body;
 
-    // TODO: Add validation and authentication checks here
-
     const totalAmount = items.reduce(
       (sum: number, item: any) => sum + item.quantity * item.pricePerItem,
       0
     );
 
-    // Use a transaction to ensure all operations are atomic
     await prisma.$transaction(async (tx) => {
-      // 1. Create the Invoice
       const newInvoice = await tx.invoice.create({
         data: {
-          invoiceNumber: `INV-${Date.now()}`, // Simple invoice number
+          invoiceNumber: `INV-${Date.now()}`,
           invoiceType: 'SALES',
           partyId: partyId,
           totalAmount: totalAmount,
         },
       });
 
-      // 2. Create Invoice Items
       await tx.invoiceItem.createMany({
         data: items.map((item: any) => ({
           invoiceId: newInvoice.id,
@@ -36,7 +31,6 @@ export async function POST(request: Request) {
         })),
       });
 
-      // 3. Create Stock Transactions (type 'OUT')
       await tx.stockTransaction.createMany({
         data: items.map((item: any) => ({
           productId: item.productId,
@@ -46,7 +40,6 @@ export async function POST(request: Request) {
         })),
       });
 
-      // 4. Create a Ledger Transaction (type 'DEBIT')
       await tx.ledgerTransaction.create({
         data: {
           partyId: partyId,

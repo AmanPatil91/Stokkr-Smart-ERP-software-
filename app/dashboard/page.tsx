@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -35,7 +34,12 @@ export default function DashboardPage() {
         const sales = await salesResponse.json();
         const stock = await stockResponse.json();
 
-        setSalesData(sales);
+        // Convert the totalSales string to a number for the component state
+        const formattedSales = {
+          totalSales: sales.totalSales ? parseFloat(sales.totalSales) : 0,
+        };
+        
+        setSalesData(formattedSales);
         setStockData(stock);
       } catch (err: any) {
         setError(err.message);

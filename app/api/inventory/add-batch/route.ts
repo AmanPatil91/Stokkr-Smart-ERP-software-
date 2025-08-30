@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
@@ -8,13 +8,10 @@ export async function POST(request: Request) {
 
     const expiryDate = new Date(expiry);
 
-    // Explicitly parse strings to numbers before using them in Prisma
     const parsedQuantity = parseFloat(quantity);
     const parsedCost = parseFloat(cost);
 
-    // Use a transaction to ensure all operations are atomic
     await prisma.$transaction(async (tx) => {
-      // 1. Create the new Batch
       const newBatch = await tx.batch.create({
         data: {
           batchNumber: batchNo,
@@ -25,7 +22,6 @@ export async function POST(request: Request) {
         },
       });
 
-      // 2. Create a Stock Transaction (type 'IN')
       await tx.stockTransaction.create({
         data: {
           productId: productId,
@@ -36,7 +32,6 @@ export async function POST(request: Request) {
         },
       });
 
-      // 3. Create a Ledger Transaction for the supplier (CREDIT)
       await tx.ledgerTransaction.create({
         data: {
           partyId: supplierId,

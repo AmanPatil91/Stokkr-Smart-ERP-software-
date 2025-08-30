@@ -34,37 +34,58 @@ export default function AddStockPage() {
   const [expiry, setExpiry] = useState('');
 
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // Fetch all necessary data on page load
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [productsResponse, partiesResponse, stockResponse] = await Promise.all([
-          fetch('/api/products'),
-          fetch('/api/parties'),
-          fetch('/api/reports/stock-summary'),
-        ]);
+  const fetchInitialData = async () => {
+    setInitialLoading(true);
+    try {
+      const [productsResponse, partiesResponse, stockResponse] = await Promise.all([
+        fetch('/api/products'),
+        fetch('/api/parties'),
+        fetch('/api/reports/stock-summary'),
+      ]);
 
-        const productsData = await productsResponse.json();
-        const partiesData = await partiesResponse.json();
-        const stockData = await stockResponse.json();
+      const productsData = await productsResponse.json();
+      const partiesData = await partiesResponse.json();
+      const stockData = await stockResponse.json();
 
+      if (Array.isArray(productsData)) {
         setProducts(productsData);
-        setSuppliers(partiesData.filter((p: Party) => p.partyType === 'SUPPLIER'));
-        setStockSummary(stockData);
-        
-        if (productsData.length > 0) {
-          setSelectedProductId(productsData[0].id);
-        }
-        if (partiesData.length > 0) {
-          setSelectedSupplierId(partiesData.filter((p: Party) => p.partyType === 'SUPPLIER')[0].id);
-        }
-      } catch (err) {
-        setError('Failed to fetch data.');
+      } else {
+        setError('Invalid products data received from API.');
+        setProducts([]);
       }
-    };
-    fetchData();
+
+      if (Array.isArray(partiesData)) {
+        setSuppliers(partiesData.filter((p: Party) => p.partyType === 'SUPPLIER'));
+      } else {
+        setError('Invalid parties data received from API.');
+        setSuppliers([]);
+      }
+      
+      if (Array.isArray(stockData)) {
+        setStockSummary(stockData);
+      } else {
+        setError('Invalid stock summary data received from API.');
+        setStockSummary([]);
+      }
+      
+      if (productsData.length > 0) {
+        setSelectedProductId(productsData[0].id);
+      }
+      if (partiesData.length > 0) {
+        setSelectedSupplierId(partiesData.filter((p: Party) => p.partyType === 'SUPPLIER')[0].id);
+      }
+    } catch (err) {
+      setError('Failed to fetch data.');
+    } finally {
+      setInitialLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInitialData();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -76,7 +97,7 @@ export default function AddStockPage() {
     const parsedCost = cost ? parseFloat(cost) : 0;
 
     try {
-      const response = await fetch('/api/inventory/add-stock', {
+      const response = await fetch('/api/inventory/add-batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -93,10 +114,8 @@ export default function AddStockPage() {
         throw new Error('Failed to add stock batch');
       }
 
-      const updatedStockResponse = await fetch('/api/reports/stock-summary');
-      const updatedStockData = await updatedStockResponse.json();
-      setStockSummary(updatedStockData);
-
+      await fetchInitialData();
+      
       setSelectedProductId('');
       setSelectedSupplierId('');
       setBatchNo('');
@@ -111,6 +130,8 @@ export default function AddStockPage() {
     }
   };
 
+  if (initialLoading) return <div className="p-4 text-center">Loading...</div>;
+
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Add Stock in Batches</h1>
@@ -118,6 +139,7 @@ export default function AddStockPage() {
       {error && <div className="bg-red-200 text-red-800 p-2 mb-4 rounded">{error}</div>}
 
       <div className="grid grid-cols-2 gap-8">
+        {/* Form to Add Stock in a New Batch */}
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4">Add New Batch</h2>
           <form onSubmit={handleSubmit}>
@@ -198,13 +220,14 @@ export default function AddStockPage() {
             <button
               type="submit"
               className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 disabled:bg-blue-300"
-              disabled={loading}
+              disabled={loading || initialLoading}
             >
               {loading ? 'Adding...' : 'Add Batch'}
             </button>
           </form>
         </div>
 
+        {/* Stock Summary List */}
         <div className="bg-white p-6 rounded-lg shadow-md">
           <h2 className="text-xl font-semibold mb-4">Current Stock</h2>
           {stockSummary.length === 0 ? (

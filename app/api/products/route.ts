@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
@@ -17,8 +17,8 @@ export async function POST(request: Request) {
 
     return NextResponse.json(newProduct, { status: 201 });
   } catch (error) {
-    console.error('Failed to create product:', error);
-    return NextResponse.json({ error: 'Failed to create product.' }, { status: 500 });
+    console.error('Failed to create new product:', error);
+    return NextResponse.json({ error: 'Failed to create new product.' }, { status: 500 });
   }
 }
 
