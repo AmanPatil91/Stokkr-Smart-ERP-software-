@@ -45,55 +45,64 @@ export default function AddProductPage() {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-3xl font-bold mb-8">Add New Product</h1>
-
-      {error && <div className="bg-red-200 text-red-800 p-3 mb-4 rounded">{error}</div>}
-
-      <form onSubmit={handleSubmit} className="max-w-lg bg-white p-6 rounded-lg shadow-md">
-        <div className="mb-4">
-          <label className="block text-gray-700 font-semibold mb-2">Product Name</label>
-          <input
-            type="text"
-            className="w-full p-3 border rounded"
-            value={productName}
-            onChange={(e) => setProductName(e.target.value)}
-            required
-            placeholder="Enter product name"
-          />
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-2xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Add New Product</h1>
+          <p className="text-gray-600 mt-2">Create a new product in your inventory</p>
         </div>
 
-        <div className="mb-4">
-          <label className="block text-gray-700 font-semibold mb-2">Product ID (SKU)</label>
-          <input
-            type="text"
-            className="w-full p-3 border rounded"
-            value={productId}
-            onChange={(e) => setProductId(e.target.value)}
-            required
-            placeholder="Enter unique product ID"
-          />
-        </div>
+        {error && <div className="bg-red-50 border border-red-200 text-red-700 p-4 mb-6 rounded-lg">{error}</div>}
 
-        <div className="mb-6">
-          <label className="block text-gray-700 font-semibold mb-2">Product Category</label>
-          <input
-            type="text"
-            className="w-full p-3 border rounded"
-            value={productCategory}
-            onChange={(e) => setProductCategory(e.target.value)}
-            placeholder="Enter product category"
-          />
-        </div>
+        {/* Form Card */}
+        <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-gray-900 font-semibold mb-2">Product Name</label>
+              <input
+                type="text"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={productName}
+                onChange={(e) => setProductName(e.target.value)}
+                required
+                placeholder="e.g., Laptop"
+              />
+            </div>
 
-        <button
-          type="submit"
-          className="w-full bg-green-500 text-white p-3 rounded hover:bg-green-600 disabled:bg-green-300 font-semibold"
-          disabled={loading}
-        >
-          {loading ? 'Creating...' : 'Create Product'}
-        </button>
-      </form>
+            <div>
+              <label className="block text-gray-900 font-semibold mb-2">Product ID (SKU)</label>
+              <input
+                type="text"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={productId}
+                onChange={(e) => setProductId(e.target.value)}
+                required
+                placeholder="e.g., SKU-001"
+              />
+            </div>
+
+            <div>
+              <label className="block text-gray-900 font-semibold mb-2">Product Category</label>
+              <input
+                type="text"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={productCategory}
+                onChange={(e) => setProductCategory(e.target.value)}
+                placeholder="e.g., Electronics"
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:bg-blue-300 font-semibold transition-colors"
+              disabled={loading}
+            >
+              {loading ? 'Creating...' : 'Create Product'}
+            </button>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,27 +1,36 @@
 import Link from 'next/link';
 
 export default function HomePage() {
+  const modules = [
+    { href: '/parties', label: 'Manage Parties', icon: '👥', desc: 'Customers & Suppliers' },
+    { href: '/sales/new', label: 'Create Sales Invoice', icon: '📋', desc: 'New Invoice' },
+    { href: '/inventory', label: 'Manage Inventory', icon: '📦', desc: 'Stock & Products' },
+    { href: '/dashboard', label: 'View Dashboard', icon: '📊', desc: 'Analytics' },
+  ];
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
-      <h1 className="text-4xl font-bold text-gray-800 mb-4">
-        Welcome to your ERP system
-      </h1>
-      <p className="text-lg text-gray-600 mb-8">
-        Manage your business from here.
-      </p>
-      <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
-        <Link href="/parties" className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-center">
-          Manage Parties
-        </Link>
-        <Link href="/sales/new" className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 text-center">
-          Create Sales Invoice
-        </Link>
-        <Link href="/inventory" className="px-6 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 text-center">
-          Manage Inventory
-        </Link>
-        <Link href="/dashboard" className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 text-center">
-          View Dashboard
-        </Link>
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-12">
+          <h1 className="text-3xl font-bold text-gray-900">Welcome to your ERP</h1>
+          <p className="text-gray-600 mt-2">Manage your business operations efficiently</p>
+        </div>
+
+        {/* Module Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {modules.map((module) => (
+            <Link
+              key={module.href}
+              href={module.href}
+              className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100 hover:border-gray-200 cursor-pointer"
+            >
+              <div className="text-3xl mb-3">{module.icon}</div>
+              <h3 className="font-semibold text-gray-900 text-lg">{module.label}</h3>
+              <p className="text-gray-500 text-sm mt-1">{module.desc}</p>
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );
