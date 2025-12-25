@@ -130,126 +130,134 @@ export default function AddStockPage() {
     }
   };
 
-  if (initialLoading) return <div className="p-4 text-center">Loading...</div>;
+  if (initialLoading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><p className="text-gray-600">Loading...</p></div>;
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Add Stock in Batches</h1>
-
-      {error && <div className="bg-red-200 text-red-800 p-2 mb-4 rounded">{error}</div>}
-
-      <div className="grid grid-cols-2 gap-8">
-        {/* Form to Add Stock in a New Batch */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4">Add New Batch</h2>
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label className="block text-gray-700">Product</label>
-              <select
-                className="w-full p-2 border rounded"
-                value={selectedProductId}
-                onChange={(e) => setSelectedProductId(e.target.value)}
-                required
-              >
-                <option value="">-- Select a Product --</option>
-                {products.map((product) => (
-                  <option key={product.id} value={product.id}>{product.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-gray-700">Supplier</label>
-              <select
-                className="w-full p-2 border rounded"
-                value={selectedSupplierId}
-                onChange={(e) => setSelectedSupplierId(e.target.value)}
-                required
-              >
-                <option value="">-- Select a Supplier --</option>
-                {suppliers.map((supplier) => (
-                  <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
-                ))}
-              </select>
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-gray-700">Batch No.</label>
-              <input
-                type="text"
-                className="w-full p-2 border rounded"
-                value={batchNo}
-                onChange={(e) => setBatchNo(e.target.value)}
-                required
-              />
-            </div>
-            
-            <div className="mb-4">
-              <label className="block text-gray-700">Quantity</label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                required
-              />
-            </div>
-            
-            <div className="mb-4">
-              <label className="block text-gray-700">Cost per Item</label>
-              <input
-                type="number"
-                className="w-full p-2 border rounded"
-                value={cost}
-                onChange={(e) => setCost(e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="mb-4">
-              <label className="block text-gray-700">Expiry Date</label>
-              <input
-                type="date"
-                className="w-full p-2 border rounded"
-                value={expiry}
-                onChange={(e) => setExpiry(e.target.value)}
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 disabled:bg-blue-300"
-              disabled={loading || initialLoading}
-            >
-              {loading ? 'Adding...' : 'Add Batch'}
-            </button>
-          </form>
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Add Stock in Batches</h1>
+          <p className="text-gray-600 mt-2">Add inventory from suppliers in batches</p>
         </div>
 
-        {/* Stock Summary List */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4">Current Stock</h2>
-          {stockSummary.length === 0 ? (
-            <p className="text-gray-500">No stock data found.</p>
-          ) : (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Stock</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {stockSummary.map(item => (
-                  <tr key={item.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.currentStock}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+        {error && <div className="bg-red-50 border border-red-200 text-red-700 p-4 mb-6 rounded-lg">{error}</div>}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Form to Add Stock in a New Batch */}
+          <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Add New Batch</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-gray-900 font-semibold mb-2">Product</label>
+                <select
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={selectedProductId}
+                  onChange={(e) => setSelectedProductId(e.target.value)}
+                  required
+                >
+                  <option value="">-- Select a Product --</option>
+                  {products.map((product) => (
+                    <option key={product.id} value={product.id}>{product.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-gray-900 font-semibold mb-2">Supplier</label>
+                <select
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={selectedSupplierId}
+                  onChange={(e) => setSelectedSupplierId(e.target.value)}
+                  required
+                >
+                  <option value="">-- Select a Supplier --</option>
+                  {suppliers.map((supplier) => (
+                    <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-gray-900 font-semibold mb-2">Batch Number</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={batchNo}
+                  onChange={(e) => setBatchNo(e.target.value)}
+                  placeholder="e.g., BATCH-001"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-gray-900 font-semibold mb-2">Quantity</label>
+                <input
+                  type="number"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-gray-900 font-semibold mb-2">Cost per Item</label>
+                <input
+                  type="number"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={cost}
+                  onChange={(e) => setCost(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-gray-900 font-semibold mb-2">Expiry Date</label>
+                <input
+                  type="date"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={expiry}
+                  onChange={(e) => setExpiry(e.target.value)}
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:bg-blue-300 font-semibold transition-colors mt-2"
+                disabled={loading || initialLoading}
+              >
+                {loading ? 'Adding...' : 'Add Batch'}
+              </button>
+            </form>
+          </div>
+
+          {/* Stock Summary List */}
+          <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Current Stock</h2>
+            {stockSummary.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">No stock data found.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Product Name</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Current Stock</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stockSummary.map((item, idx) => (
+                      <tr key={item.id} className={idx !== (stockSummary.length - 1) ? 'border-b border-gray-100' : ''}>
+                        <td className="px-4 py-4 text-sm font-medium text-gray-900">{item.name}</td>
+                        <td className="px-4 py-4 text-sm text-gray-600">{item.currentStock}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

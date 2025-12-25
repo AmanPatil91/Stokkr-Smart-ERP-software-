@@ -63,80 +63,90 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Customer Management</h1>
-
-      {error && <div className="bg-red-200 text-red-800 p-2 mb-4 rounded">{error}</div>}
-
-      <div className="grid grid-cols-2 gap-8">
-        {/* Form to Add a New Customer */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4">Add New Customer</h2>
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label className="block text-gray-700">Name</label>
-              <input
-                type="text"
-                className="w-full p-2 border rounded"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </div>
-            {/* 👈 New input fields */}
-            <div className="mb-4">
-              <label className="block text-gray-700">Contact Number (Optional)</label>
-              <input
-                type="text"
-                className="w-full p-2 border rounded"
-                value={contactNumber}
-                onChange={(e) => setContactNumber(e.target.value)}
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-gray-700">Email (Optional)</label>
-              <input
-                type="email"
-                className="w-full p-2 border rounded"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            {/* End of new fields */}
-            <div className="mb-4">
-              <label className="block text-gray-700">GSTIN (Optional)</label>
-              <input
-                type="text"
-                className="w-full p-2 border rounded"
-                value={gstin}
-                onChange={(e) => setGstin(e.target.value)}
-              />
-            </div>
-            <button
-              type="submit"
-              className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 disabled:bg-blue-300"
-              disabled={loading}
-            >
-              {loading ? 'Adding...' : 'Add Customer'}
-            </button>
-          </form>
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-6xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Manage Customers</h1>
+          <p className="text-gray-600 mt-2">Add and view your customers</p>
         </div>
 
-        {/* List of Existing Customers */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-xl font-semibold mb-4">Existing Customers</h2>
-          {parties.length === 0 ? (
-            <p className="text-gray-500">No customers found. Add one using the form.</p>
-          ) : (
-            <ul>
-              {parties.map((party) => (
-                <li key={party.id} className="p-2 border-b last:border-b-0">
-                  <p className="font-medium">{party.name}</p>
-                  <p className="text-sm text-gray-600">ID: {party.id}</p>
-                </li>
-              ))}
-            </ul>
-          )}
+        {error && <div className="bg-red-50 border border-red-200 text-red-700 p-4 mb-6 rounded-lg">{error}</div>}
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Form to Add a New Customer */}
+          <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Add New Customer</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-gray-900 font-semibold mb-2">Name</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g., John Doe"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-gray-900 font-semibold mb-2">Contact Number</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={contactNumber}
+                  onChange={(e) => setContactNumber(e.target.value)}
+                  placeholder="e.g., +1234567890"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-900 font-semibold mb-2">Email</label>
+                <input
+                  type="email"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="e.g., john@example.com"
+                />
+              </div>
+              <div>
+                <label className="block text-gray-900 font-semibold mb-2">GSTIN</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={gstin}
+                  onChange={(e) => setGstin(e.target.value)}
+                  placeholder="e.g., 18AABCT1234H1Z0"
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:bg-blue-300 font-semibold transition-colors mt-2"
+                disabled={loading}
+              >
+                {loading ? 'Adding...' : 'Add Customer'}
+              </button>
+            </form>
+          </div>
+
+          {/* List of Existing Customers */}
+          <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-100">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">Existing Customers</h2>
+            {parties.length === 0 ? (
+              <p className="text-gray-500 text-center py-8">No customers found. Add one using the form.</p>
+            ) : (
+              <div className="space-y-4">
+                {parties.map((party) => (
+                  <div key={party.id} className="p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors">
+                    <p className="font-semibold text-gray-900">{party.name}</p>
+                    {party.contactNumber && <p className="text-sm text-gray-600">📞 {party.contactNumber}</p>}
+                    {party.email && <p className="text-sm text-gray-600">📧 {party.email}</p>}
+                    {party.gstin && <p className="text-sm text-gray-600">🏷️ {party.gstin}</p>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
