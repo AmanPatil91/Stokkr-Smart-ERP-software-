@@ -1,0 +1,67 @@
+I want to implement inventory alert features in my ERP project using batch-wise expiry tracking.
+
+Updated requirements:
+
+1. Product & Batch structure:
+   - Products can have multiple batches
+   - Expiry date is entered while adding a NEW BATCH (not at product level)
+   - Each batch has:
+     - expiryDate
+     - quantity
+
+2. Alert configuration (while adding a new PRODUCT TYPE):
+   - Expiry Alert Days (number of days before batch expiry to trigger alert)
+   - Low Stock Alert Quantity (minimum total stock across all batches)
+
+3. Live datetime tracking:
+   - Use live system datetime (new Date()) for current date
+   - Automatically calculate remaining days for each batch:
+     remainingDays = expiryDate − currentDate
+   - No manual input for current date
+
+4. Alert logic:
+   - Expiry alert:
+     - If remainingDays <= Expiry Alert Days
+     - Show batch as "Expiring Soon"
+   - Low stock alert:
+     - Calculate total stock = sum of quantities of all batches
+     - If total stock <= Low Stock Alert Quantity
+     - Mark product as "Low Stock"
+
+5. Dashboard alerts:
+   - Create a dashboard alerts section showing:
+     a) Expiring Soon Batches
+        - Product name
+        - Batch ID
+        - Expiry date
+        - Remaining days
+     b) Low Stock Products
+        - Product name
+        - Total available stock
+        - Alert threshold
+   - Update alerts dynamically based on live datetime
+
+6. Technical constraints:
+   - Use existing database models if possible
+   - If changes are required, clearly show updated schema (Product + Batch)
+   - Do NOT break existing APIs or logic
+   - Use clean, readable code with comments
+
+7. Tech stack:
+   - Next.js + React
+   - Backend API routes / Node
+   - Prisma (if used)
+   - Tailwind CSS for UI
+
+🔒 Additional constraints:
+- Do NOT introduce cron jobs, background workers, or scheduled tasks
+- Compute alerts dynamically at request time (API call)
+- Do NOT rename existing routes, components, or files
+- Show exact file names where code changes are made
+
+Please generate:
+- Required schema changes (Product & Batch)
+- Backend logic for computing expiry and low-stock alerts
+- API endpoints or services for dashboard alerts
+- Frontend dashboard UI code (cards or tables)
+- Step-by-step explanation of the solution

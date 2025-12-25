@@ -8,6 +8,8 @@ export default function AddProductPage() {
   const [productName, setProductName] = useState('');
   const [productId, setProductId] = useState('');
   const [productCategory, setProductCategory] = useState('');
+  const [expiryAlertDays, setExpiryAlertDays] = useState('7');
+  const [lowStockAlertQty, setLowStockAlertQty] = useState('10');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,6 +28,8 @@ export default function AddProductPage() {
           description: productCategory,
           price: 0,
           cost: 0,
+          expiryAlertDays: parseInt(expiryAlertDays),
+          lowStockAlertQty: parseInt(lowStockAlertQty),
         }),
       });
 
@@ -36,6 +40,8 @@ export default function AddProductPage() {
       setProductName('');
       setProductId('');
       setProductCategory('');
+      setExpiryAlertDays('7');
+      setLowStockAlertQty('10');
       router.push('/inventory');
     } catch (err: any) {
       setError(err.message || 'An error occurred');
@@ -91,6 +97,40 @@ export default function AddProductPage() {
                 onChange={(e) => setProductCategory(e.target.value)}
                 placeholder="e.g., Electronics"
               />
+            </div>
+
+            {/* Alert Configuration Section */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+              <h3 className="text-sm font-semibold text-blue-900 mb-4">⚠️ Alert Configuration</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-gray-900 font-semibold mb-2">Expiry Alert Days</label>
+                  <p className="text-sm text-gray-600 mb-2">Days before batch expiry to trigger alert</p>
+                  <input
+                    type="number"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={expiryAlertDays}
+                    onChange={(e) => setExpiryAlertDays(e.target.value)}
+                    min="1"
+                    max="365"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-900 font-semibold mb-2">Low Stock Alert Quantity</label>
+                  <p className="text-sm text-gray-600 mb-2">Minimum total stock across all batches</p>
+                  <input
+                    type="number"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={lowStockAlertQty}
+                    onChange={(e) => setLowStockAlertQty(e.target.value)}
+                    min="0"
+                    required
+                  />
+                </div>
+              </div>
             </div>
 
             <button

@@ -53,15 +53,17 @@ model Session {
 
 // Existing Product model
 model Product {
-  id                String             @id @default(cuid())
-  name              String
-  sku               String             @unique
-  description       String?
-  price             Decimal            @db.Decimal(10, 2)
-  cost              Decimal            @db.Decimal(10, 2)
-  batches           Batch[]            // 👈 Add this relationship
-  stockTransactions StockTransaction[]
-  invoiceItems      InvoiceItem[]
+  id                      String             @id @default(cuid())
+  name                    String
+  sku                     String             @unique
+  description             String?
+  price                   Decimal            @db.Decimal(10, 2)
+  cost                    Decimal            @db.Decimal(10, 2)
+  expiryAlertDays         Int                @default(7)  // Days before expiry to trigger alert
+  lowStockAlertQty        Int                @default(10) // Minimum stock threshold
+  batches                 Batch[]
+  stockTransactions       StockTransaction[]
+  invoiceItems            InvoiceItem[]
 }
 
 
