@@ -36,9 +36,9 @@ export async function GET() {
       },
     });
 
-    // Extract values with fallback to 0
-    const revenue = salesRevenue._sum.totalAmount || 0;
-    const expenses = totalExpenses._sum.amount || 0;
+    // Extract values with fallback to 0, and convert Decimal to number
+    const revenue = Number(salesRevenue._sum.totalAmount || 0);
+    const expenses = Number(totalExpenses._sum.amount || 0);
 
     // Calculate net profit/loss
     const netProfitLoss = revenue - expenses;

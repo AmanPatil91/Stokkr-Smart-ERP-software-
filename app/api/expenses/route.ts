@@ -8,7 +8,13 @@ export async function GET() {
       orderBy: { expenseDate: 'desc' },
     });
 
-    return NextResponse.json(expenses);
+    // Convert Decimal amounts to numbers for JSON serialization
+    const formattedExpenses = expenses.map(exp => ({
+      ...exp,
+      amount: Number(exp.amount),
+    }));
+
+    return NextResponse.json(formattedExpenses);
   } catch (error) {
     console.error('Error fetching expenses:', error);
     return NextResponse.json(
