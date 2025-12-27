@@ -5,6 +5,7 @@ export default function HomePage() {
     { href: '/parties', label: 'Manage Parties', icon: '👥', desc: 'Customers & Suppliers' },
     { href: '/sales/new', label: 'Create Sales Invoice', icon: '📋', desc: 'New Invoice' },
     { href: '/inventory', label: 'Manage Inventory', icon: '📦', desc: 'Stock & Products' },
+    { href: '/expenses', label: 'Track Expenses', icon: '💸', desc: 'Expense Management' },
     { href: '/dashboard', label: 'View Dashboard', icon: '📊', desc: 'Analytics' },
   ];
 

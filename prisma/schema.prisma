@@ -136,3 +136,17 @@ model LedgerTransaction {
   date          DateTime  @default(now())
   description   String
 }
+
+// Expense Tracking
+model Expense {
+  id              String    @id @default(cuid())
+  category        String    // "Rent", "Electricity", "Transportation Cost", "Staff Salary", "Loading / Unloading", "Packaging", "Office Supplies", "Internet / Mobile", "Maintenance", "Interest on Loans", "Miscellaneous"
+  title           String    // Description / Title
+  amount          Decimal   @db.Decimal(10, 2) // Must be positive
+  expenseDate     DateTime  // Expense Date
+  paymentMode     String    // "Cash", "Bank", "UPI"
+  referenceNumber String?   // Optional reference number
+  notes           String?   // Optional notes
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
