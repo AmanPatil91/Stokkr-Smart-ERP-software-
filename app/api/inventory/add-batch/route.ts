@@ -12,6 +12,8 @@ export async function POST(request: Request) {
     const parsedCost = parseFloat(cost);
 
     await prisma.$transaction(async (tx) => {
+      const batchTotal = parsedCost * parsedQuantity;
+      
       const newBatch = await tx.batch.create({
         data: {
           batchNumber: batchNo,
@@ -36,8 +38,18 @@ export async function POST(request: Request) {
         data: {
           partyId: supplierId,
           transactionType: 'CREDIT',
-          amount: parsedCost * parsedQuantity,
+          amount: batchTotal,
           description: `Purchase from supplier for batch ${batchNo}`,
+        },
+      });
+
+      // ACCOUNTS PAYABLE: Create AP record with full amount as default payable
+      await tx.accountsPayable.create({
+        data: {
+          batchId: newBatch.id,
+          totalAmount: batchTotal,
+          payableAmount: batchTotal, // Defaults to full amount
+          paymentStatus: 'PENDING', // Starts as PENDING since payableAmount > 0
         },
       });
     });

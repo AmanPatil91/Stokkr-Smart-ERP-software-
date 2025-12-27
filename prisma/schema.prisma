@@ -76,6 +76,8 @@ model Batch {
   productId     String
   product       Product            @relation(fields: [productId], references: [id])
   stockTransactions StockTransaction[]
+  // AP/AR: Link to accounts payable (for purchase batches)
+  accountsPayable AccountsPayable?
 }
 
 
@@ -114,6 +116,8 @@ model Invoice {
   partyId       String
   party         Party         @relation(fields: [partyId], references: [id])
   items         InvoiceItem[]
+  // AP/AR: Link to accounts receivable (for SALES invoices only)
+  accountsReceivable AccountsReceivable?
 }
 
 model InvoiceItem {
@@ -147,6 +151,36 @@ model Expense {
   paymentMode     String    // "Cash", "Bank", "UPI"
   referenceNumber String?   // Optional reference number
   notes           String?   // Optional notes
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// Accounts Payable - Tracks money owed to suppliers via purchase batches
+model AccountsPayable {
+  id              String    @id @default(cuid())
+  batchId         String    @unique
+  batch           Batch     @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  // Total batch amount (cost per item * quantity)
+  totalAmount     Decimal   @db.Decimal(10, 2)
+  // Payable amount defaults to total, can be reduced for partial payments
+  payableAmount   Decimal   @db.Decimal(10, 2)
+  // Payment status: "PENDING" if payableAmount > 0, "COMPLETED" if payableAmount = 0
+  paymentStatus   String    @default("PENDING") // "PENDING" or "COMPLETED"
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// Accounts Receivable - Tracks money owed by customers via sales invoices
+model AccountsReceivable {
+  id              String    @id @default(cuid())
+  invoiceId       String    @unique
+  invoice         Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  // Total invoice amount
+  totalAmount     Decimal   @db.Decimal(10, 2)
+  // Receivable amount defaults to total, can be reduced for partial payments
+  receivableAmount Decimal   @db.Decimal(10, 2)
+  // Payment status: "PENDING" if receivableAmount > 0, "COMPLETED" if receivableAmount = 0
+  paymentStatus   String    @default("PENDING") // "PENDING" or "COMPLETED"
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }

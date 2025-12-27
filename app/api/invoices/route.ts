@@ -48,6 +48,16 @@ export async function POST(request: Request) {
           description: `Sales Invoice #${newInvoice.invoiceNumber}`,
         },
       });
+
+      // ACCOUNTS RECEIVABLE: Create AR record with full amount as default receivable
+      await tx.accountsReceivable.create({
+        data: {
+          invoiceId: newInvoice.id,
+          totalAmount: totalAmount,
+          receivableAmount: totalAmount, // Defaults to full amount
+          paymentStatus: 'PENDING', // Starts as PENDING since receivableAmount > 0
+        },
+      });
     });
 
     return NextResponse.json({ message: 'Invoice created successfully' }, { status: 201 });
