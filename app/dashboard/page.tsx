@@ -29,30 +29,40 @@ type LowStockProduct = {
   alertThreshold: number;
 };
 
+type MonthlyPL = {
+  month: string;
+  totalRevenue: number;
+  totalExpenses: number;
+  netProfitLoss: number;
+};
+
 export default function DashboardPage() {
   const [salesData, setSalesData] = useState<SalesSummary | null>(null);
   const [stockData, setStockData] = useState<StockItem[] | null>(null);
   const [expiringBatches, setExpiringBatches] = useState<ExpiringBatch[]>([]);
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
+  const [monthlyPL, setMonthlyPL] = useState<MonthlyPL | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [salesResponse, stockResponse, alertsResponse] = await Promise.all([
+        const [salesResponse, stockResponse, alertsResponse, plResponse] = await Promise.all([
           fetch('/api/reports/sales-summary'),
           fetch('/api/reports/stock-summary'),
           fetch('/api/alerts'),
+          fetch('/api/reports/monthly-pl'),
         ]);
 
-        if (!salesResponse.ok || !stockResponse.ok || !alertsResponse.ok) {
+        if (!salesResponse.ok || !stockResponse.ok || !alertsResponse.ok || !plResponse.ok) {
           throw new Error('Failed to fetch dashboard data.');
         }
 
         const sales = await salesResponse.json();
         const stock = await stockResponse.json();
         const alerts = await alertsResponse.json();
+        const pl = await plResponse.json();
 
         const formattedSales = {
           totalSales: sales.totalSales ? parseFloat(sales.totalSales) : 0,
@@ -62,6 +72,7 @@ export default function DashboardPage() {
         setStockData(stock);
         setExpiringBatches(alerts.expiringBatches || []);
         setLowStockProducts(alerts.lowStockProducts || []);
+        setMonthlyPL(pl);
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -121,6 +132,38 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Monthly Profit & Loss Section */}
+        {monthlyPL && (
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-sm border border-blue-200 p-6 mb-8">
+            <h2 className="text-lg font-semibold text-gray-900 mb-6">📈 Monthly Profit & Loss - {monthlyPL.month}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Total Revenue */}
+              <div className="bg-white rounded-lg p-4 border border-green-200">
+                <p className="text-gray-600 text-sm font-medium">Total Revenue</p>
+                <p className="text-2xl font-bold text-green-600 mt-2">
+                  ₹{monthlyPL.totalRevenue.toFixed(2)}
+                </p>
+              </div>
+
+              {/* Total Expenses */}
+              <div className="bg-white rounded-lg p-4 border border-red-200">
+                <p className="text-gray-600 text-sm font-medium">Total Expenses</p>
+                <p className="text-2xl font-bold text-red-600 mt-2">
+                  ₹{monthlyPL.totalExpenses.toFixed(2)}
+                </p>
+              </div>
+
+              {/* Net Profit/Loss */}
+              <div className={`bg-white rounded-lg p-4 border-2 ${monthlyPL.netProfitLoss >= 0 ? 'border-green-400' : 'border-red-400'}`}>
+                <p className="text-gray-600 text-sm font-medium">Net Profit/Loss</p>
+                <p className={`text-2xl font-bold mt-2 ${monthlyPL.netProfitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {monthlyPL.netProfitLoss >= 0 ? '+' : ''}₹{monthlyPL.netProfitLoss.toFixed(2)}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Inventory Alerts */}
         {(expiringBatches.length > 0 || lowStockProducts.length > 0) && (
