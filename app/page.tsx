@@ -5,6 +5,8 @@ export default function HomePage() {
     { href: '/parties', label: 'Manage Parties', icon: '👥', desc: 'Customers & Suppliers' },
     { href: '/sales/new', label: 'Create Sales Invoice', icon: '📋', desc: 'New Invoice' },
     { href: '/inventory', label: 'Manage Inventory', icon: '📦', desc: 'Stock & Products' },
+    { href: '/accounts-receivable', label: 'Accounts Receivable', icon: '💰', desc: 'Customer Payments' },
+    { href: '/accounts-payable', label: 'Accounts Payable', icon: '💳', desc: 'Supplier Payments' },
     { href: '/expenses', label: 'Track Expenses', icon: '💸', desc: 'Expense Management' },
     { href: '/dashboard', label: 'View Dashboard', icon: '📊', desc: 'Analytics' },
   ];
