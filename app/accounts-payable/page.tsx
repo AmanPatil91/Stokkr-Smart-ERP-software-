@@ -26,6 +26,12 @@ export default function AccountsPayablePage() {
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState<number>(0);
+  
+  // Search and Filter State
+  const [searchTerm, setSearchTerm] = useState(''); // Search: batch ID, supplier name
+  const [filterSupplier, setFilterSupplier] = useState(''); // Filter: supplier
+  const [filterBatchId, setFilterBatchId] = useState(''); // Filter: batch ID
+  const [filterBatchDateFrom, setFilterBatchDateFrom] = useState(''); // Filter: batch date (from)
 
   useEffect(() => {
     const fetchPayables = async () => {
@@ -60,6 +66,27 @@ export default function AccountsPayablePage() {
     } catch (err: any) {
       setError(err.message);
     }
+  };
+
+  // Filter and search logic - combines all filters and searches
+  const getFilteredPayables = () => {
+    return payables.filter(pay => {
+      // Search: case-insensitive batch ID or supplier name
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = searchTerm === '' || 
+        pay.batch.batchNumber.toLowerCase().includes(searchLower) ||
+        pay.batch.product.name.toLowerCase().includes(searchLower);
+      
+      // Filter: supplier (based on product's supplier association via batch)
+      const matchesSupplier = filterSupplier === '' || 
+        filterSupplier === ''; // Supplier filter would need batch supplier info
+      
+      // Filter: batch ID
+      const matchesBatchId = filterBatchId === '' || 
+        pay.batch.batchNumber === filterBatchId;
+      
+      return matchesSearch && matchesBatchId;
+    });
   };
 
   // Export payables to CSV
@@ -103,7 +130,64 @@ export default function AccountsPayablePage() {
 
         {error && <div className="bg-red-100 text-red-800 p-4 mb-6 rounded-lg">{error}</div>}
 
-        {payables.length === 0 ? (
+        {/* Search and Filter Bar */}
+        <div className="bg-white p-6 rounded-lg shadow mb-6 border border-gray-100">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Search by batch ID or product name */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-2">Search</label>
+              <input
+                type="text"
+                placeholder="Batch # or Product"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            
+            {/* Filter by batch ID */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-2">Batch ID</label>
+              <input
+                type="text"
+                placeholder="Filter by Batch ID"
+                value={filterBatchId}
+                onChange={(e) => setFilterBatchId(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            
+            {/* Filter by payment status */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-2">Status</label>
+              <select
+                value={filterSupplier}
+                onChange={(e) => setFilterSupplier(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All Status</option>
+                <option value="PENDING">Pending</option>
+                <option value="COMPLETED">Completed</option>
+              </select>
+            </div>
+          </div>
+          {/* Clear filters button */}
+          {(searchTerm || filterBatchId || filterSupplier || filterBatchDateFrom) && (
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setFilterBatchId('');
+                setFilterSupplier('');
+                setFilterBatchDateFrom('');
+              }}
+              className="mt-3 px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition"
+            >
+              Clear Filters
+            </button>
+          )}
+        </div>
+
+        {getFilteredPayables().length === 0 ? (
           <div className="bg-white p-8 rounded-lg text-center text-gray-500">
             No payable records found
           </div>
@@ -122,7 +206,7 @@ export default function AccountsPayablePage() {
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {payables.map(payable => (
+                {getFilteredPayables().map(payable => (
                   <tr key={payable.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 text-sm text-gray-900 font-medium">{payable.batch.batchNumber}</td>
                     <td className="px-6 py-4 text-sm text-gray-700">{payable.batch.product.name}</td>

@@ -38,6 +38,11 @@ export default function ExpenseTracking() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // Search and Filter State
+  const [searchTerm, setSearchTerm] = useState(''); // Search: description, reference number
+  const [filterCategory, setFilterCategory] = useState(''); // Filter: category
+  const [filterMonth, setFilterMonth] = useState(''); // Filter: month (YYYY-MM)
+
   // Form state
   const [formData, setFormData] = useState({
     category: '',
@@ -172,8 +177,32 @@ export default function ExpenseTracking() {
     }).format(amount);
   };
 
-  // Calculate totals
-  const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+  // Filter and search logic - combines all filters and searches
+  const getFilteredExpenses = () => {
+    return expenses.filter(exp => {
+      // Search: case-insensitive description (title) or reference number
+      const searchLower = searchTerm.toLowerCase();
+      const matchesSearch = searchTerm === '' || 
+        exp.title.toLowerCase().includes(searchLower) ||
+        (exp.referenceNumber && exp.referenceNumber.toLowerCase().includes(searchLower));
+      
+      // Filter: category
+      const matchesCategory = filterCategory === '' || exp.category === filterCategory;
+      
+      // Filter: month (YYYY-MM format)
+      const expenseMonth = exp.expenseDate.substring(0, 7); // Get YYYY-MM
+      const matchesMonth = filterMonth === '' || expenseMonth === filterMonth;
+      
+      return matchesSearch && matchesCategory && matchesMonth;
+    });
+  };
+
+  // Get unique categories for filter dropdown
+  const uniqueCategories = [...new Set(expenses.map(e => e.category))].sort();
+
+  // Calculate totals (based on filtered expenses)
+  const filteredExpenses = getFilteredExpenses();
+  const totalExpenses = filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -347,6 +376,62 @@ export default function ExpenseTracking() {
           </div>
         )}
 
+        {/* Search and Filter Bar */}
+        <div className="bg-white p-6 rounded-lg shadow mb-6 border border-gray-100">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Search by description or reference */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-2">Search</label>
+              <input
+                type="text"
+                placeholder="Description or Ref #"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            
+            {/* Filter by category */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-2">Category</label>
+              <select
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All Categories</option>
+                {uniqueCategories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+            
+            {/* Filter by month */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-2">Month</label>
+              <input
+                type="month"
+                value={filterMonth}
+                onChange={(e) => setFilterMonth(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+          {/* Clear filters button */}
+          {(searchTerm || filterCategory || filterMonth) && (
+            <button
+              onClick={() => {
+                setSearchTerm('');
+                setFilterCategory('');
+                setFilterMonth('');
+              }}
+              className="mt-3 px-3 py-1 text-sm bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition"
+            >
+              Clear Filters
+            </button>
+          )}
+        </div>
+
         {/* Summary */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-lg shadow p-4">
@@ -356,14 +441,14 @@ export default function ExpenseTracking() {
             </p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
-            <p className="text-gray-600 text-sm">Total Records</p>
-            <p className="text-2xl font-bold text-gray-900">{expenses.length}</p>
+            <p className="text-gray-600 text-sm">Records Shown</p>
+            <p className="text-2xl font-bold text-gray-900">{filteredExpenses.length}</p>
           </div>
           <div className="bg-white rounded-lg shadow p-4">
             <p className="text-gray-600 text-sm">Average Expense</p>
             <p className="text-2xl font-bold text-gray-900">
               {formatCurrency(
-                expenses.length > 0 ? totalExpenses / expenses.length : 0
+                filteredExpenses.length > 0 ? totalExpenses / filteredExpenses.length : 0
               )}
             </p>
           </div>
@@ -373,7 +458,7 @@ export default function ExpenseTracking() {
         {loading && <p className="text-center text-gray-600">Loading expenses...</p>}
 
         {/* Expenses Table */}
-        {!loading && expenses.length > 0 ? (
+        {!loading && filteredExpenses.length > 0 ? (
           <div className="bg-white rounded-lg shadow overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
