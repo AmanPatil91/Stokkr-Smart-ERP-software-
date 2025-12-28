@@ -36,14 +36,43 @@ type MonthlyPL = {
   netProfitLoss: number;
 };
 
+type FinancialHealth = {
+  month: string;
+  totalSales: string;
+  totalExpenses: string;
+  netProfitLoss: string;
+  outstandingAmount: string;
+  totalReceivable: string;
+  totalPayable: string;
+};
+
 export default function DashboardPage() {
   const [salesData, setSalesData] = useState<SalesSummary | null>(null);
   const [stockData, setStockData] = useState<StockItem[] | null>(null);
   const [expiringBatches, setExpiringBatches] = useState<ExpiringBatch[]>([]);
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
   const [monthlyPL, setMonthlyPL] = useState<MonthlyPL | null>(null);
+  const [financialHealth, setFinancialHealth] = useState<FinancialHealth | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Month selector state - default to current month
+  const today = new Date();
+  const [selectedMonth, setSelectedMonth] = useState<number>(today.getMonth());
+  const [selectedYear, setSelectedYear] = useState<number>(today.getFullYear());
+
+  // Fetch financial health data based on selected month
+  const fetchFinancialHealth = async (month: number, year: number) => {
+    try {
+      const response = await fetch(`/api/reports/financial-health?month=${month}&year=${year}`);
+      if (!response.ok) throw new Error('Failed to fetch financial health data');
+      const data = await response.json();
+      setFinancialHealth(data);
+    } catch (err: any) {
+      console.error('Error fetching financial health:', err);
+      setError(err.message);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -80,7 +109,24 @@ export default function DashboardPage() {
       }
     };
     fetchData();
+    
+    // Fetch financial health for current month on load
+    fetchFinancialHealth(selectedMonth, selectedYear);
   }, []);
+
+  // Handle month change
+  const handleMonthChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newMonth = parseInt(e.target.value, 10);
+    setSelectedMonth(newMonth);
+    fetchFinancialHealth(newMonth, selectedYear);
+  };
+
+  // Handle year change
+  const handleYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newYear = parseInt(e.target.value, 10);
+    setSelectedYear(newYear);
+    fetchFinancialHealth(selectedMonth, newYear);
+  };
 
   if (loading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><p className="text-gray-600">Loading dashboard...</p></div>;
   if (error) return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><p className="text-red-600">Error: {error}</p></div>;
@@ -133,33 +179,94 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Monthly Profit & Loss Section */}
-        {monthlyPL && (
+        {/* Financial Health Section with Month Selector */}
+        {financialHealth && (
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg shadow-sm border border-blue-200 p-6 mb-8">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">📈 Monthly Profit & Loss - {monthlyPL.month}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Total Revenue */}
+            {/* Month Selector */}
+            <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900">📈 Financial Health</h2>
+              <div className="flex gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Month</label>
+                  <select
+                    value={selectedMonth}
+                    onChange={handleMonthChange}
+                    className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm text-gray-900 focus:outline-none focus:border-blue-500"
+                  >
+                    {Array.from({ length: 12 }, (_, i) => ({
+                      value: i,
+                      label: new Date(2024, i).toLocaleString('default', { month: 'long' }),
+                    })).map((month) => (
+                      <option key={month.value} value={month.value}>
+                        {month.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Year</label>
+                  <select
+                    value={selectedYear}
+                    onChange={handleYearChange}
+                    className="px-3 py-2 border border-gray-300 rounded-lg bg-white text-sm text-gray-900 focus:outline-none focus:border-blue-500"
+                  >
+                    {Array.from({ length: 5 }, (_, i) => ({
+                      value: new Date().getFullYear() - 2 + i,
+                    })).map((year) => (
+                      <option key={year.value} value={year.value}>
+                        {year.value}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* KPI Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Total Sales */}
               <div className="bg-white rounded-lg p-4 border border-green-200">
-                <p className="text-gray-600 text-sm font-medium">Total Revenue</p>
-                <p className="text-2xl font-bold text-green-600 mt-2">
-                  ₹{monthlyPL.totalRevenue.toFixed(2)}
+                <p className="text-gray-600 text-sm font-medium">Total Sales</p>
+                <p className="text-xl font-bold text-green-600 mt-2">
+                  ₹{parseFloat(financialHealth.totalSales).toFixed(2)}
                 </p>
               </div>
 
               {/* Total Expenses */}
               <div className="bg-white rounded-lg p-4 border border-red-200">
                 <p className="text-gray-600 text-sm font-medium">Total Expenses</p>
-                <p className="text-2xl font-bold text-red-600 mt-2">
-                  ₹{monthlyPL.totalExpenses.toFixed(2)}
+                <p className="text-xl font-bold text-red-600 mt-2">
+                  ₹{parseFloat(financialHealth.totalExpenses).toFixed(2)}
                 </p>
               </div>
 
               {/* Net Profit/Loss */}
-              <div className={`bg-white rounded-lg p-4 border-2 ${monthlyPL.netProfitLoss >= 0 ? 'border-green-400' : 'border-red-400'}`}>
+              <div className={`bg-white rounded-lg p-4 border-2 ${parseFloat(financialHealth.netProfitLoss) >= 0 ? 'border-green-400' : 'border-red-400'}`}>
                 <p className="text-gray-600 text-sm font-medium">Net Profit/Loss</p>
-                <p className={`text-2xl font-bold mt-2 ${monthlyPL.netProfitLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {monthlyPL.netProfitLoss >= 0 ? '+' : ''}₹{monthlyPL.netProfitLoss.toFixed(2)}
+                <p className={`text-xl font-bold mt-2 ${parseFloat(financialHealth.netProfitLoss) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {parseFloat(financialHealth.netProfitLoss) >= 0 ? '+' : ''}₹{parseFloat(financialHealth.netProfitLoss).toFixed(2)}
                 </p>
+              </div>
+
+              {/* Outstanding Amount */}
+              <div className={`bg-white rounded-lg p-4 border-2 ${parseFloat(financialHealth.outstandingAmount) >= 0 ? 'border-blue-400' : 'border-orange-400'}`}>
+                <p className="text-gray-600 text-sm font-medium">Outstanding Amount</p>
+                <p className={`text-xl font-bold mt-2 ${parseFloat(financialHealth.outstandingAmount) >= 0 ? 'text-blue-600' : 'text-orange-600'}`}>
+                  {parseFloat(financialHealth.outstandingAmount) >= 0 ? '+' : ''}₹{parseFloat(financialHealth.outstandingAmount).toFixed(2)}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">Receivable - Payable</p>
+              </div>
+            </div>
+
+            {/* Additional Info */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 text-xs">
+              <div className="bg-white rounded-lg p-3 border border-gray-200">
+                <p className="text-gray-600">Total Receivable (Customer Debt)</p>
+                <p className="font-semibold text-gray-900">₹{parseFloat(financialHealth.totalReceivable).toFixed(2)}</p>
+              </div>
+              <div className="bg-white rounded-lg p-3 border border-gray-200">
+                <p className="text-gray-600">Total Payable (Supplier Debt)</p>
+                <p className="font-semibold text-gray-900">₹{parseFloat(financialHealth.totalPayable).toFixed(2)}</p>
               </div>
             </div>
           </div>
