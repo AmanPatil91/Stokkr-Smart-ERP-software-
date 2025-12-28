@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { exportToCSV, formatDateForCSV, formatCurrencyForCSV } from '@/lib/csvExport';
 
 type Expense = {
   id: string;
@@ -66,6 +67,28 @@ export default function ExpenseTracking() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Export expenses to CSV
+  const handleExportExpenses = () => {
+    if (expenses.length === 0) {
+      alert('No expenses to export');
+      return;
+    }
+
+    const headers = ['Category', 'Title', 'Amount', 'Date', 'Payment Mode', 'Reference Number', 'Notes'];
+    const rows = expenses.map(exp => [
+      exp.category,
+      exp.title,
+      formatCurrencyForCSV(exp.amount),
+      formatDateForCSV(exp.expenseDate),
+      exp.paymentMode,
+      exp.referenceNumber || '',
+      exp.notes || '',
+    ]);
+
+    const filename = `Expenses_${new Date().toISOString().split('T')[0]}`;
+    exportToCSV({ filename, headers, rows });
   };
 
   const handleInputChange = (
@@ -161,12 +184,20 @@ export default function ExpenseTracking() {
             <h1 className="text-3xl font-bold text-gray-900">Expense Tracking</h1>
             <p className="text-gray-600 mt-1">Manage and track all business expenses</p>
           </div>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-          >
-            {showForm ? 'Cancel' : 'Add Expense'}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleExportExpenses}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm"
+            >
+              📥 Export CSV
+            </button>
+            <button
+              onClick={() => setShowForm(!showForm)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            >
+              {showForm ? 'Cancel' : 'Add Expense'}
+            </button>
+          </div>
         </div>
 
         {/* Alert Messages */}

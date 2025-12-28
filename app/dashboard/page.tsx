@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { exportToCSV, formatCurrencyForCSV } from '@/lib/csvExport';
 
 type SalesSummary = {
   totalSales: number;
@@ -128,6 +129,27 @@ export default function DashboardPage() {
     fetchFinancialHealth(selectedMonth, newYear);
   };
 
+  // Export P&L to CSV
+  const handleExportPL = () => {
+    if (!financialHealth) {
+      alert('No financial data to export');
+      return;
+    }
+
+    const headers = ['Month', 'Total Sales', 'Total Expenses', 'Net Profit / Loss'];
+    const rows = [
+      [
+        financialHealth.month,
+        formatCurrencyForCSV(financialHealth.totalSales),
+        formatCurrencyForCSV(financialHealth.totalExpenses),
+        formatCurrencyForCSV(financialHealth.netProfitLoss),
+      ],
+    ];
+
+    const filename = `ProfitLoss_${new Date().toISOString().split('T')[0]}`;
+    exportToCSV({ filename, headers, rows });
+  };
+
   if (loading) return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><p className="text-gray-600">Loading dashboard...</p></div>;
   if (error) return <div className="min-h-screen bg-gray-50 flex items-center justify-center"><p className="text-red-600">Error: {error}</p></div>;
 
@@ -185,7 +207,13 @@ export default function DashboardPage() {
             {/* Month Selector */}
             <div className="mb-6 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
               <h2 className="text-lg font-semibold text-gray-900">📈 Financial Health</h2>
-              <div className="flex gap-3">
+              <div className="flex gap-3 items-end">
+                <button
+                  onClick={handleExportPL}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm"
+                >
+                  📥 Export P&L CSV
+                </button>
                 <div>
                   <label className="block text-xs font-medium text-gray-600 mb-1">Month</label>
                   <select

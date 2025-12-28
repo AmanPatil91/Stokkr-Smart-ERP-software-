@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { exportToCSV, formatCurrencyForCSV } from '@/lib/csvExport';
 
 type AccountPayable = {
   id: string;
@@ -61,14 +62,43 @@ export default function AccountsPayablePage() {
     }
   };
 
+  // Export payables to CSV
+  const handleExportPayables = () => {
+    if (payables.length === 0) {
+      alert('No payables to export');
+      return;
+    }
+
+    const headers = ['Batch Number', 'Product', 'Quantity', 'Total Amount', 'Payable Amount', 'Status'];
+    const rows = payables.map(pay => [
+      pay.batch.batchNumber,
+      pay.batch.product.name,
+      pay.batch.quantity,
+      formatCurrencyForCSV(pay.totalAmount),
+      formatCurrencyForCSV(pay.payableAmount),
+      pay.paymentStatus,
+    ]);
+
+    const filename = `Payables_${new Date().toISOString().split('T')[0]}`;
+    exportToCSV({ filename, headers, rows });
+  };
+
   if (loading) return <div className="p-8 text-center">Loading...</div>;
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Accounts Payable</h1>
-          <p className="text-gray-600 mt-2">Track money owed to suppliers</p>
+        <div className="flex justify-between items-start mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Accounts Payable</h1>
+            <p className="text-gray-600 mt-2">Track money owed to suppliers</p>
+          </div>
+          <button
+            onClick={handleExportPayables}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm"
+          >
+            📥 Export CSV
+          </button>
         </div>
 
         {error && <div className="bg-red-100 text-red-800 p-4 mb-6 rounded-lg">{error}</div>}
