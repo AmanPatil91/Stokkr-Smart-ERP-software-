@@ -162,6 +162,18 @@ export default function DashboardPage() {
           <p className="text-gray-600 mt-2">Overview of your business metrics</p>
         </div>
 
+        {/* Quick Links */}
+        <div className="mb-8">
+          <div className="flex gap-3 flex-wrap">
+            <a
+              href="/reports/profit-loss"
+              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm font-medium"
+            >
+              📊 View P&L Statement
+            </a>
+          </div>
+        </div>
+
         {/* Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
