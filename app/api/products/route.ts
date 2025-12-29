@@ -26,7 +26,13 @@ export async function POST(request: Request) {
 
 export async function GET() {
   try {
-    const products = await prisma.product.findMany();
+    const products = await prisma.product.findMany({
+      include: {
+        batches: {
+          orderBy: { expiryDate: 'asc' },
+        },
+      },
+    });
     return NextResponse.json(products);
   } catch (error) {
     console.error('Failed to fetch products:', error);

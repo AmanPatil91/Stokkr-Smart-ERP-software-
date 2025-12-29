@@ -71,21 +71,21 @@ export default function AccountsPayablePage() {
   // Filter and search logic - combines all filters and searches
   const getFilteredPayables = () => {
     return payables.filter(pay => {
-      // Search: case-insensitive batch ID or supplier name
+      // Search: case-insensitive batch ID or product name
       const searchLower = searchTerm.toLowerCase();
       const matchesSearch = searchTerm === '' || 
         pay.batch.batchNumber.toLowerCase().includes(searchLower) ||
         pay.batch.product.name.toLowerCase().includes(searchLower);
       
-      // Filter: supplier (based on product's supplier association via batch)
-      const matchesSupplier = filterSupplier === '' || 
-        filterSupplier === ''; // Supplier filter would need batch supplier info
-      
       // Filter: batch ID
       const matchesBatchId = filterBatchId === '' || 
-        pay.batch.batchNumber === filterBatchId;
+        pay.batch.batchNumber.toLowerCase().includes(filterBatchId.toLowerCase());
       
-      return matchesSearch && matchesBatchId;
+      // Filter: payment status
+      const matchesStatus = filterSupplier === '' || 
+        pay.paymentStatus === filterSupplier;
+      
+      return matchesSearch && matchesBatchId && matchesStatus;
     });
   };
 

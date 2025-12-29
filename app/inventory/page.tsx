@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 export default function InventoryMainPage() {
   const tasks = [
+    { href: '/inventory/products', icon: '📊', label: 'View Inventory Products', desc: 'Search and filter products' },
     { href: '/products/new', icon: '➕', label: 'Add New Product Type', desc: 'Create a new product' },
     { href: '/inventory/add-batch', icon: '📦', label: 'Add Stock in Batches', desc: 'Update inventory' },
   ];
