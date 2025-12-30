@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { calculateFifoCogs, reduceBatchQuantities } from '@/lib/cogsCalculator';
 
 export async function POST(request: Request) {
   try {
@@ -11,6 +12,22 @@ export async function POST(request: Request) {
       0
     );
 
+    // Calculate COGS for each item using FIFO method
+    const itemsWithCogs = await Promise.all(
+      items.map(async (item: any) => {
+        const cogsResult = await calculateFifoCogs(item.productId, item.quantity);
+        return {
+          ...item,
+          cogsPerItem: cogsResult.cogsPerItem,
+          cogsTotal: cogsResult.cogsTotal,
+          batchUsage: cogsResult.batchUsage,
+        };
+      })
+    );
+
+    // Total COGS for the invoice
+    const totalCogs = itemsWithCogs.reduce((sum, item) => sum + item.cogsTotal, 0);
+
     await prisma.$transaction(async (tx) => {
       const newInvoice = await tx.invoice.create({
         data: {
@@ -21,18 +38,26 @@ export async function POST(request: Request) {
         },
       });
 
+      // Create invoice items with COGS data
       await tx.invoiceItem.createMany({
-        data: items.map((item: any) => ({
+        data: itemsWithCogs.map((item: any) => ({
           invoiceId: newInvoice.id,
           productId: item.productId,
           quantity: item.quantity,
           pricePerItem: item.pricePerItem,
           subtotal: item.quantity * item.pricePerItem,
+          cogsPerItem: item.cogsPerItem,
+          cogsTotal: item.cogsTotal,
         })),
       });
 
+      // Reduce batch quantities based on FIFO consumption
+      for (const item of itemsWithCogs) {
+        await reduceBatchQuantities(item.batchUsage);
+      }
+
       await tx.stockTransaction.createMany({
-        data: items.map((item: any) => ({
+        data: itemsWithCogs.map((item: any) => ({
           productId: item.productId,
           transactionType: 'OUT',
           quantity: item.quantity,

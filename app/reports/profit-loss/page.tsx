@@ -3,21 +3,29 @@
 import { useState, useEffect } from 'react';
 import { exportToCSV, formatCurrencyForCSV } from '@/lib/csvExport';
 
+type InvoiceItem = {
+  cogsTotal: number | null;
+};
+
 type Invoice = {
   id: string;
   totalAmount: number;
   date: string;
+  items: InvoiceItem[];
 };
 
 type Expense = {
   id: string;
   amount: number;
   expenseDate: string;
+  category: string;
 };
 
 type PLStatement = {
   sales: number;
-  expenses: number;
+  cogs: number;
+  grossProfit: number;
+  operatingExpenses: number;
   operatingProfit: number;
   otherIncome: number;
   interestCost: number;
@@ -62,11 +70,12 @@ export default function ProfitLossPage() {
       const invoicesData = await invoicesRes.json();
       const expensesData = await expensesRes.json();
 
-      // Extract invoice data with proper structure
+      // Extract invoice data with proper structure including invoice items for COGS
       const formattedInvoices = invoicesData.map((rec: any) => ({
         id: rec.invoiceId,
         totalAmount: Number(rec.totalAmount) || 0,
         date: rec.invoice?.date || new Date().toISOString(),
+        items: rec.invoice?.items || [],
       }));
 
       // Extract expense data
@@ -74,6 +83,7 @@ export default function ProfitLossPage() {
         id: exp.id,
         amount: Number(exp.amount) || 0,
         expenseDate: exp.expenseDate,
+        category: exp.category,
       }));
 
       setInvoices(formattedInvoices);
@@ -106,38 +116,52 @@ export default function ProfitLossPage() {
     });
   };
 
-  // Calculate P&L statement
+  // Calculate P&L statement with COGS
   const calculatePL = (): PLStatement => {
     const monthInvoices = getInvoicesForMonth();
     const monthExpenses = getExpensesForMonth();
 
-    // Step 1: Calculate Sales (total invoices for the month)
+    // Step 1: Calculate Sales Revenue (total invoices for the month)
     const sales = monthInvoices.reduce((sum, inv) => sum + inv.totalAmount, 0);
 
-    // Step 2: Calculate Operating Expenses (total expenses for the month)
-    const totalExpenses = monthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+    // Step 2: Calculate Cost of Goods Sold (COGS) from invoice items
+    // COGS only includes sold items at their FIFO cost, NOT inventory purchases
+    const cogs = monthInvoices.reduce((sum, inv) => {
+      const invoiceCogs = inv.items.reduce((itemSum, item) => {
+        return itemSum + (item.cogsTotal ? Number(item.cogsTotal) : 0);
+      }, 0);
+      return sum + invoiceCogs;
+    }, 0);
 
-    // Step 3: Operating Profit = Sales - Expenses
-    const operatingProfit = sales - totalExpenses;
+    // Step 3: Calculate Gross Profit = Sales - COGS
+    const grossProfit = sales - cogs;
 
-    // Step 4: Other Income (user configured)
+    // Step 4: Calculate Operating Expenses (manual expenses only, NOT inventory purchases)
+    const operatingExpenses = monthExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+
+    // Step 5: Operating Profit = Gross Profit - Operating Expenses
+    const operatingProfit = grossProfit - operatingExpenses;
+
+    // Step 6: Other Income (user configured)
     const otherIncomeValue = otherIncome || 0;
 
-    // Step 5: Interest Cost (user configured)
+    // Step 7: Interest Cost (user configured)
     const interestCostValue = interestCost || 0;
 
-    // Step 6: Profit Before Tax = Operating Profit + Other Income - Interest Cost
+    // Step 8: Profit Before Tax = Operating Profit + Other Income - Interest Cost
     const profitBeforeTax = operatingProfit + otherIncomeValue - interestCostValue;
 
-    // Step 7: Tax = PBT × Tax Rate / 100
+    // Step 9: Tax = PBT × Tax Rate / 100
     const taxAmount = Math.max(0, profitBeforeTax * (taxRate / 100));
 
-    // Step 8: Net Profit / Loss = PBT - Tax
+    // Step 10: Net Profit / Loss = PBT - Tax
     const netProfit = profitBeforeTax - taxAmount;
 
     return {
       sales,
-      expenses: totalExpenses,
+      cogs,
+      grossProfit,
+      operatingExpenses,
       operatingProfit,
       otherIncome: otherIncomeValue,
       interestCost: interestCostValue,
@@ -173,7 +197,11 @@ export default function ProfitLossPage() {
     const rows = [
       ['', ''],
       ['SALES', formatCurrencyForCSV(plStatement.sales)],
-      ['EXPENSES', formatCurrencyForCSV(plStatement.expenses)],
+      ['Less: Cost of Goods Sold (COGS)', formatCurrencyForCSV(plStatement.cogs)],
+      ['', ''],
+      ['GROSS PROFIT', formatCurrencyForCSV(plStatement.grossProfit)],
+      ['', ''],
+      ['Less: Operating Expenses', formatCurrencyForCSV(plStatement.operatingExpenses)],
       ['', ''],
       ['OPERATING PROFIT', formatCurrencyForCSV(plStatement.operatingProfit)],
       ['', ''],
@@ -312,11 +340,32 @@ export default function ProfitLossPage() {
                   </td>
                 </tr>
 
-                {/* Expenses Section */}
+                {/* COGS Section */}
                 <tr className="border-b border-gray-200 hover:bg-red-50">
-                  <td className="px-6 py-4 font-semibold text-gray-900 text-base">Less: Expenses</td>
+                  <td className="px-6 py-4 font-semibold text-gray-900 text-base">Less: Cost of Goods Sold (COGS)</td>
                   <td className="px-6 py-4 text-right font-bold text-red-600 text-base">
-                    ({formatCurrency(plStatement.expenses)})
+                    ({formatCurrency(plStatement.cogs)})
+                  </td>
+                </tr>
+
+                {/* Separator */}
+                <tr className="border-b-2 border-gray-400 bg-gray-50">
+                  <td colSpan={2} className="h-2"></td>
+                </tr>
+
+                {/* Gross Profit */}
+                <tr className="border-b border-gray-200 bg-green-50 hover:bg-green-100">
+                  <td className="px-6 py-4 font-bold text-gray-900 text-base">Gross Profit</td>
+                  <td className="px-6 py-4 text-right font-bold text-green-700 text-lg">
+                    {formatCurrency(plStatement.grossProfit)}
+                  </td>
+                </tr>
+
+                {/* Operating Expenses Section */}
+                <tr className="border-b border-gray-200 hover:bg-orange-50">
+                  <td className="px-6 py-4 font-semibold text-gray-900 text-base">Less: Operating Expenses</td>
+                  <td className="px-6 py-4 text-right font-bold text-orange-600 text-base">
+                    ({formatCurrency(plStatement.operatingExpenses)})
                   </td>
                 </tr>
 
@@ -443,13 +492,16 @@ export default function ProfitLossPage() {
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-8">
           <h3 className="font-semibold text-blue-900 mb-3">ℹ️ Statement Notes</h3>
           <ul className="text-sm text-blue-800 space-y-2">
-            <li>• <strong>Sales</strong>: Total invoices for the selected month</li>
-            <li>• <strong>Expenses</strong>: Total operational expenses for the selected month</li>
+            <li>• <strong>Sales</strong>: Total invoiced revenue for the selected month</li>
+            <li>• <strong>COGS (Cost of Goods Sold)</strong>: Cost of inventory SOLD (using FIFO method). Unsold inventory remains as assets.</li>
+            <li>• <strong>Gross Profit</strong>: Sales − COGS. Profit from selling activities only.</li>
+            <li>• <strong>Operating Expenses</strong>: Rent, salaries, utilities, etc. (does NOT include inventory purchases)</li>
             <li>• <strong>Other Income</strong>: Optional incentives, schemes, or other income sources (editable)</li>
             <li>• <strong>Interest Cost</strong>: Loan interest payments for the month (editable)</li>
             <li>• <strong>Tax Rate</strong>: Configurable tax percentage (currently {plStatement.taxRate}%)</li>
             <li>• <strong>Operating Margin</strong>: Operating Profit ÷ Sales × 100</li>
             <li>• <strong>Net Profit Margin</strong>: Net Profit ÷ Sales × 100</li>
+            <li>• <strong>FIFO Method</strong>: When selling inventory, oldest batches are used first for COGS calculation</li>
           </ul>
         </div>
       </div>

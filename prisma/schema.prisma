@@ -129,6 +129,12 @@ model InvoiceItem {
   quantity      Int
   pricePerItem  Decimal @db.Decimal(10, 2)
   subtotal      Decimal @db.Decimal(10, 2)
+  
+  // FIFO COGS: Cost of Goods Sold calculated at invoice creation time
+  // For SALES invoices: COGS per item = weighted average cost from batches used (FIFO)
+  // For PURCHASE invoices: COGS fields remain NULL as purchases don't have COGS
+  cogsPerItem   Decimal? @db.Decimal(10, 2) // FIFO cost per item for sales
+  cogsTotal     Decimal? @db.Decimal(10, 2) // Total COGS = cogsPerItem × quantity
 }
 
 model LedgerTransaction {
