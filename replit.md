@@ -100,13 +100,39 @@ ADD COLUMN "cogsTotal" DECIMAL(10,2);
 - No breaking changes to existing APIs
 - All historical data preserved accurately
 
+## How to Use
+
+### For New Invoices
+- When you create a sales invoice, COGS is automatically calculated using FIFO method
+- The system finds the oldest available batches and uses their costs
+- Batch quantities are automatically reduced
+
+### For Existing Invoices (Before COGS Implementation)
+- An API endpoint is available to backfill COGS for old invoices
+- **Endpoint**: `POST /api/backfill-cogs`
+- This calculates COGS as average batch cost × quantity sold
+- Run once after upgrading to initialize historical data
+
+### P&L Report Usage
+1. Navigate to Reports → Profit & Loss
+2. Select month and year
+3. COGS will now show correctly (cost of goods sold only)
+4. Operating Expenses are separate from COGS
+5. Net Profit correctly reflects only profitability on sold items
+
 ## Dev Setup
 - Next.js dev server: `npm run dev` (running on port 5000)
 - Prisma client auto-generated after migration
 - Database: PostgreSQL with Prisma ORM
+- Prisma schema: `prisma/schema.prisma`
 
 ## User Preferences
 - Keep invoice/batch/inventory flows unchanged
 - Minimal UI changes to existing layouts
 - Add FIFO logic comments for clarity
 - Preserve historical invoice data accuracy
+
+## Known Issues Fixed
+- Inventory purchases incorrectly treated as expenses ✓
+- COGS shows as 0 for old invoices (backfill API fixes this) ✓
+- P&L structure now matches standard accounting ✓
