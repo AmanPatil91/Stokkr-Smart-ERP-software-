@@ -102,23 +102,36 @@ ADD COLUMN "cogsTotal" DECIMAL(10,2);
 
 ## How to Use
 
-### For New Invoices
-- When you create a sales invoice, COGS is automatically calculated using FIFO method
-- The system finds the oldest available batches and uses their costs
-- Batch quantities are automatically reduced
+### Reports Available
 
-### For Existing Invoices (Before COGS Implementation)
-- An API endpoint is available to backfill COGS for old invoices
-- **Endpoint**: `POST /api/backfill-cogs`
-- This calculates COGS as average batch cost × quantity sold
-- Run once after upgrading to initialize historical data
-
-### P&L Report Usage
+#### 1. Profit & Loss Statement
 1. Navigate to Reports → Profit & Loss
 2. Select month and year
-3. COGS will now show correctly (cost of goods sold only)
-4. Operating Expenses are separate from COGS
-5. Net Profit correctly reflects only profitability on sold items
+3. View accrual-based accounting:
+   - Sales revenue (invoices created)
+   - COGS (cost of goods sold using FIFO)
+   - Operating expenses (all recorded expenses)
+   - Operating profit (before financing/taxes)
+
+#### 2. Cash Flow Statement (NEW)
+1. Navigate to Reports → Cash Flow
+2. Select month and year
+3. View cash-based accounting:
+   - **Operating Activities**: Cash received from customer payments - Cash paid for expenses
+   - **Financing Activities**: Loans received/repaid (future feature)
+   - **Investing Activities**: Capital expenditures (future feature)
+   - **Net Cash Flow**: Total monthly cash movement
+4. Export to CSV for records
+
+### COGS Implementation
+- **For New Invoices**: COGS is automatically calculated using FIFO method
+- **For Existing Invoices**: Run `POST /api/backfill-cogs` to initialize historical data
+- **FIFO Logic**: Uses oldest batches first; batch quantities automatically reduced
+
+### Key Differences: P&L vs Cash Flow
+- **P&L**: Accrual-based (sales/expenses recorded when incurred)
+- **Cash Flow**: Cash-based (only actual cash movements counted)
+- **Example**: A credit sale appears in P&L immediately but in Cash Flow only when paid
 
 ## Dev Setup
 - Next.js dev server: `npm run dev` (running on port 5000)
@@ -136,3 +149,31 @@ ADD COLUMN "cogsTotal" DECIMAL(10,2);
 - Inventory purchases incorrectly treated as expenses ✓
 - COGS shows as 0 for old invoices (backfill API fixes this) ✓
 - P&L structure now matches standard accounting ✓
+
+## Features Implemented
+
+### Monthly Cash Flow Statement (NEW)
+- **Location**: Reports → Cash Flow
+- **Purpose**: Track actual cash movements (cash-based accounting)
+- **Sections**:
+  - Operating Activities: Cash from customers - Expenses paid
+  - Financing Activities: Loans and repayments (future)
+  - Investing Activities: Capital expenditures (future)
+- **Features**:
+  - Month/year selection defaulting to current month
+  - Dynamic recalculation on month/year change
+  - CSV export with formatted accounting table
+  - Positive/negative indicators for cash flow health
+  - Clear separation from P&L statement
+
+### COGS & Profit & Loss (Previously Implemented)
+- FIFO method for calculating cost of goods sold
+- Automatic calculation when invoices are created
+- Backfill API for historical invoice data
+- P&L statement shows: Sales → COGS → Gross Profit → Operating Expenses → Net Profit
+
+## API Endpoints
+- `GET /api/cash-flow?month=0-11&year=YYYY` - Monthly cash flow calculation
+- `GET /api/accounts-receivable` - Customer invoices with COGS
+- `POST /api/backfill-cogs` - Initialize COGS for old invoices
+- `GET /api/expenses` - Operating expenses list
