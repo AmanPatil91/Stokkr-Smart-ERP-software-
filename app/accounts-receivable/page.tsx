@@ -143,6 +143,28 @@ export default function AccountsReceivablePage() {
 
         {error && <div className="bg-red-100 text-red-800 p-4 mb-6 rounded-lg">{error}</div>}
 
+        {/* Summary Badges */}
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
+            <p className="text-gray-600 text-xs font-medium uppercase">Pending Count</p>
+            <p className="text-2xl font-bold text-blue-600 mt-1">
+              {receivables.filter(r => r.paymentStatus === 'PENDING').length}
+            </p>
+          </div>
+          <div className="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
+            <p className="text-gray-600 text-xs font-medium uppercase">Pending Amount</p>
+            <p className="text-2xl font-bold text-blue-600 mt-1">
+              ₹{receivables.filter(r => r.paymentStatus === 'PENDING').reduce((sum, r) => sum + Number(r.receivableAmount), 0).toFixed(2)}
+            </p>
+          </div>
+          <div className="bg-white p-4 rounded-lg shadow border-l-4 border-green-500">
+            <p className="text-gray-600 text-xs font-medium uppercase">Completed Count</p>
+            <p className="text-2xl font-bold text-green-600 mt-1">
+              {receivables.filter(r => r.paymentStatus === 'COMPLETED').length}
+            </p>
+          </div>
+        </div>
+
         {/* Search and Filter Bar */}
         <div className="bg-white p-6 rounded-lg shadow mb-6 border border-gray-100">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -310,27 +332,6 @@ export default function AccountsReceivablePage() {
           </div>
         )}
 
-        {/* Summary Section */}
-        <div className="grid grid-cols-3 gap-6 mt-8">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <p className="text-gray-600 text-sm">Total Receivable</p>
-            <p className="text-2xl font-bold text-gray-900 mt-2">
-              ₹{receivables.reduce((sum, r) => sum + Number(r.receivableAmount), 0).toFixed(2)}
-            </p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <p className="text-gray-600 text-sm">Pending Payments</p>
-            <p className="text-2xl font-bold text-blue-600 mt-2">
-              {receivables.filter(r => r.paymentStatus === 'PENDING').length}
-            </p>
-          </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <p className="text-gray-600 text-sm">Completed Payments</p>
-            <p className="text-2xl font-bold text-green-600 mt-2">
-              {receivables.filter(r => r.paymentStatus === 'COMPLETED').length}
-            </p>
-          </div>
-        </div>
       </div>
     </div>
   );
