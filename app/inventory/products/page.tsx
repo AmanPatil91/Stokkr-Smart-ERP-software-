@@ -211,6 +211,7 @@ export default function InventoryProductsPage() {
           <button
             onClick={handleExportProducts}
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm"
+            suppressHydrationWarning
           >
             📥 Export CSV
           </button>
@@ -234,6 +235,7 @@ export default function InventoryProductsPage() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                suppressHydrationWarning
               />
             </div>
 
@@ -245,6 +247,7 @@ export default function InventoryProductsPage() {
                   checked={filterLowStock}
                   onChange={(e) => setFilterLowStock(e.target.checked)}
                   className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  suppressHydrationWarning
                 />
                 <span className="ml-2 text-sm font-medium text-gray-700">Low Stock Only</span>
               </label>
@@ -258,6 +261,7 @@ export default function InventoryProductsPage() {
                   checked={filterExpiringBoon}
                   onChange={(e) => setFilterExpiringBoon(e.target.checked)}
                   className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  suppressHydrationWarning
                 />
                 <span className="ml-2 text-sm font-medium text-gray-700">Expiring Soon</span>
               </label>

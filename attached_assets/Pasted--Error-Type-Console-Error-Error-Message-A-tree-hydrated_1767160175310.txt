@@ -1,0 +1,71 @@
+## Error Type
+Console Error
+
+## Error Message
+A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <InnerScrollAndFocusHandler segmentPath={[...]} focusAndScrollRef={{apply:false, ...}}>
+      <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+        <LoadingBoundary loading={null}>
+          <HTTPAccessFallbackBoundary notFound={undefined} forbidden={undefined} unauthorized={undefined}>
+            <RedirectBoundary>
+              <RedirectErrorBoundary router={{...}}>
+                <InnerLayoutRouter url="/inventory..." tree={[...]} cacheNode={{lazyData:null, ...}} segmentPath={[...]}>
+                  <SegmentViewNode type="page" pagePath="inventory/...">
+                    <SegmentTrieNode>
+                    <ClientPageRoot Component={function InventoryProductsPage} searchParams={{}} params={{}}>
+                      <InventoryProductsPage params={Promise} searchParams={Promise}>
+                        <div className="min-h-scre...">
+                          <div className="max-w-7xl ...">
+                            <div className="flex justi...">
+                              <div>
+                              <button
+                                onClick={function handleExportProducts}
+                                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition ..."
+-                               fdprocessedid="8hnvcib"
+                              >
++                               📥 Export CSV
+                            <div className="bg-white p...">
+                              <div className="grid grid-...">
+                                <div>
+                                  <label>
+                                  <input
+                                    type="text"
+                                    placeholder="Product name or SKU"
+                                    value=""
+                                    onChange={function onChange}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outlin..."
+-                                   fdprocessedid="pz0fnej"
+                                  >
+                                ...
+                            ...
+                  ...
+                ...
+      ...
+
+
+
+    at button (<anonymous>:null:null)
+    at InventoryProductsPage (app/inventory/products/page.tsx:211:11)
+
+## Code Frame
+  209 |             <p className="text-gray-600 mt-1">Monitor stock levels and product expiry dates</p>
+  210 |           </div>
+> 211 |           <button
+      |           ^
+  212 |             onClick={handleExportProducts}
+  213 |             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm"
+  214 |           >
+
+Next.js version: 15.5.0 (Webpack)
