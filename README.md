@@ -1,145 +1,186 @@
-STOKKR: Smart ERP for Business
 
-Stokkr is a production-grade, AI-enhanced Enterprise Resource Planning (ERP) platform designed for modern SMEs. It integrates high-integrity financial tracking with Generative AI and predictive analytics to provide actionable business intelligence.
+# STOKKR – Smart ERP for Distributors & SMEs
 
-🚀 Key Features
+Stokkr is a **web-based ERP system** designed for small and medium businesses, especially **FMCG distributors** (e.g., Parle distributors).
+It focuses on **inventory control, accounting accuracy, and financial clarity**, similar to industry tools like Marg ERP.
 
-1. Billing & Client Management
 
-Invoice Generation: Streamlined workflow for creating professional, multi-item invoices.
 
-Payment Tracking: Real-time monitoring of outstanding balances, payment history, and client aging.
+## 🚀 Key Features
 
-Client & Supplier Management: A centralized "Party" database for managing all business relationships securely.
+### 1️⃣ Billing & Party Management
 
-2. Inventory Management
+* Create and manage **sales invoices**
+* Track **payment status** (Pending / Completed)
+* Manage **customers and suppliers** in a centralized Party module
+* Support for **partial payments** and outstanding balances
 
-Real-time Monitoring: Instant visibility into stock levels across all products and locations.
+---
 
-Batch & Expiry Tracking: Precision management of perishable goods through dedicated batch-level logic.
+### 2️⃣ Inventory Management
 
-Automated Alerts: Smart notifications for low stock levels and nearing expiration dates.
+* Real-time stock tracking
+* **Batch-wise inventory management**
+* **Expiry date tracking** for perishable goods
+* Low-stock and expiring-soon indicators
+* FIFO-based stock usage for accurate accounting
 
-3. Automated Accounting
+---
 
-Ledger Maintenance: Automated double-entry bookkeeping synchronized with every transaction (Sales, Purchases, Expenses).
+### 3️⃣ Accounts Receivable & Payable
 
-Expense Tracking: Log and categorize operational costs for granular budget control.
+* **Receivables**: Track customer dues invoice-wise
+* **Payables**: Track supplier dues batch-wise
+* Automatic payment status updates
+* Clear visibility of pending and completed payments
 
-Financial Reporting: Instant generation of Profit & Loss statements and balance sheet summaries.
+---
 
-4. AI & Intelligence Layer
+### 4️⃣ Expense Tracking
 
-Gemini RAG Assistant: A built-in chatbot powered by Google Gemini (Function Calling). It uses Retrieval-Augmented Generation (RAG) to answer natural language questions (e.g., "What is my total sales this week?") by querying your live PostgreSQL records.
+* Record operational expenses such as:
 
-Sales Forecasting: Integrated Prophet models via an external FastAPI microservice to predict future inventory demand based on historical trends.
+  * Rent
+  * Transportation
+  * Salaries
+  * Maintenance
+  * Interest on loans
+* Category-wise expense management
+* Monthly expense summaries
 
-🛠 Tech Stack
+---
 
-Layer
+### 5️⃣ Profit & Loss Statement (Industry-Standard)
 
-Technology
+* Month & year selectable P&L
+* Uses **Cost of Goods Sold (COGS)** to ensure accurate profit calculation
+* Includes:
 
-Framework
+  * Sales
+  * COGS
+  * Operating expenses
+  * Interest cost
+  * Configurable tax
+* Prevents artificial losses due to unsold inventory
 
-Next.js 14+ (App Router), TypeScript
+---
 
-Database
+### 6️⃣ Cash Flow Statement
 
-PostgreSQL + Prisma ORM
+* Monthly cash flow analysis
+* Based strictly on **actual cash movements**
+* Separates profit from liquidity
+* Includes:
 
-Auth
+  * Cash received from customers
+  * Cash paid for expenses
+  * Loan-related cash movements
 
-Firebase Auth (Client) + NextAuth.js (Server Verification)
+---
 
-AI Layer
+### 7️⃣ Dashboard & Analytics
 
-Google Gemini API (RAG), Prophet (Forecasting)
+* Financial health KPIs:
 
-UI
+  * Monthly sales
+  * Monthly expenses
+  * Net profit / loss
+  * Outstanding amount
+* Month & year selectors
+* Clean, ERP-style dashboard layout
 
-Tailwind CSS, Lucide Icons
+---
 
-💻 Local Setup & Installation
+### 8️⃣ Data Export
 
-Follow these steps to run the project on your machine with zero errors.
+* CSV export support for:
 
-1. Prerequisites
+  * Expenses
+  * Receivables
+  * Payables
+  * Monthly P&L
+  * Cash Flow statements
 
-Node.js (v18.17.0+)
+---
 
-npm (v9.0.0+)
+## 🛠 Tech Stack
 
-PostgreSQL (Local or Cloud instance)
+* **Frontend & Backend**: Next.js (App Router), TypeScript
+* **Database**: PostgreSQL with Prisma ORM
+* **Authentication**: Firebase Auth + NextAuth.js
+* **UI**: Tailwind CSS, Lucide Icons
 
-2. Clone and Install
+---
 
-git clone [https://github.com/AmanPatil91/Stokkr-Smart-ERP-software-.git](https://github.com/AmanPatil91/Stokkr-Smart-ERP-software-.git)
+## 💻 Local Setup
+
+### 1. Prerequisites
+
+* Node.js (v18+)
+* npm
+* PostgreSQL
+
+### 2. Clone & Install
+
+```bash
+git clone https://github.com/AmanPatil91/Stokkr-Smart-ERP-software-.git
 cd Stokkr-Smart-ERP-software-
 npm install
+```
 
+### 3. Environment Variables
 
-3. Environment Variables
+Create `.env.local` in the root directory:
 
-Create a .env.local file in the root directory and populate it with your credentials:
-
-# Database connection
+```env
 DATABASE_URL="postgresql://user:password@localhost:5432/stokkr_db"
 
-# NextAuth configuration
 NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="your_random_secret_string"
+NEXTAUTH_SECRET="your_secret"
 
-# Firebase Client (Public)
 NEXT_PUBLIC_FIREBASE_API_KEY="..."
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="..."
 NEXT_PUBLIC_FIREBASE_PROJECT_ID="..."
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET="..."
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID="..."
-NEXT_PUBLIC_FIREBASE_APP_ID="..."
 
-# Firebase Admin (Private - Used for server-side auth verification)
 FIREBASE_PROJECT_ID="..."
 FIREBASE_CLIENT_EMAIL="..."
-# Ensure the private key handles newlines correctly
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+```
 
-# Gemini API
-GEMINI_API_KEY="your_google_ai_studio_key"
+### 4. Initialize Database
 
-
-4. Initialize Database
-
-# Sync schema to the database
+```bash
 npx prisma db push
-
-# Generate the Prisma Client (Required for Type Safety)
 npx prisma generate
+```
 
+### 5. Run the App
 
-5. Start Development
-
+```bash
 npm run dev
+```
+
+Open 👉 `http://localhost:3000`
+
+---
+
+## 🎯 Project Objective
+
+Stokkr was built as an **industrial ERP project** to demonstrate:
+
+* Correct accounting principles (COGS, accrual vs cash flow)
+* Real-world distributor workflows
+* Clean system design with scalable architecture
+* Practical financial reporting for SMEs
+
+---
+
+## 📌 Ideal Use Case
+
+* FMCG distributors
+* Wholesale businesses
+* Small trading firms
+* Academic / industrial ERP demonstrations
 
 
-Navigate to http://localhost:3000 to access the app.
 
-🏗 System Architecture
-
-Stokkr uses a decoupled architecture for maximum scalability:
-
-Next.js Core: Manages the main UI, secure API routes, and transactional logic.
-
-PostgreSQL/Prisma: Handles ACID-compliant data storage and atomic updates.
-
-AI Layer: Uses a Python microservice for heavy forecasting and Gemini for natural language processing via secure function calling.
-
-Auth Layer: A dual-SDK approach ensures secure client-side login and robust server-side session persistence.
-
-🛡 Troubleshooting
-
-Prisma Errors: If you see PrismaClient is not a constructor, run npx prisma generate.
-
-Auth Failures: Ensure the FIREBASE_PRIVATE_KEY in .env.local is wrapped in double quotes and uses \n for line breaks.
-
-Database Timeouts: Verify your DATABASE_URL is accessible from your network.
