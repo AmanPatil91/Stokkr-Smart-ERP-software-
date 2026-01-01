@@ -38,13 +38,15 @@ export async function GET(request: NextRequest) {
     // ============================================
 
     // 1. Cash received from customers (payments completed in the selected month)
-    // Filter AccountsReceivable where paymentStatus = "COMPLETED" and updatedAt falls in the month
+    // We look at AccountsReceivable records that were updated (completed) in this month
+    // Note: In a real system, you'd have a separate Payments table. 
+    // Here we use updatedAt as the payment date for COMPLETED receivables.
     const cashFromCustomers = await prisma.$queryRaw`
       SELECT COALESCE(SUM("totalAmount"::numeric), 0) as total
       FROM "AccountsReceivable"
       WHERE "paymentStatus" = 'COMPLETED'
-        AND EXTRACT(YEAR FROM "updatedAt") = ${year}
-        AND EXTRACT(MONTH FROM "updatedAt") = ${month + 1}
+        AND "updatedAt" >= ${startDate}
+        AND "updatedAt" < ${endDate}
     ` as Array<{ total: string }>;
 
     const cashReceivedFromCustomers = Number(cashFromCustomers[0]?.total || 0);
@@ -53,30 +55,56 @@ export async function GET(request: NextRequest) {
     const expenses = await prisma.expense.findMany({
       where: {
         expenseDate: {
-          gte: new Date(year, month, 1),
-          lt: new Date(year, month + 1, 1),
+          gte: startDate,
+          lt: endDate,
         },
       },
     });
 
     const cashExpenses = expenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
 
-    // Net Operating Cash Flow = Cash in - Cash out
-    const netOperatingCashFlow = cashReceivedFromCustomers - cashExpenses;
+    // 3. Cash paid to suppliers (Accounts Payable)
+    // Similarly, using updatedAt for COMPLETED payables within the month
+    const cashToSuppliers = await prisma.$queryRaw`
+      SELECT COALESCE(SUM("totalAmount"::numeric), 0) as total
+      FROM "AccountsPayable"
+      WHERE "paymentStatus" = 'COMPLETED'
+        AND "updatedAt" >= ${startDate}
+        AND "updatedAt" < ${endDate}
+    ` as Array<{ total: string }>;
+
+    const cashPaidToSuppliers = Number(cashToSuppliers[0]?.total || 0);
+
+    // Net Operating Cash Flow = Cash in - (Expense Cash Out + Supplier Cash Out)
+    const netOperatingCashFlow = cashReceivedFromCustomers - cashExpenses - cashPaidToSuppliers;
 
     // ============================================
     // FINANCING ACTIVITIES
     // ============================================
-    // Currently no loan/financing tracking in schema
-    // Placeholder for future: loans received, loan repayments, interest paid
-    const cashFromFinancing = 0;
-    const cashPaidForFinancing = 0;
-    const netFinancingCashFlow = cashFromFinancing - cashPaidForFinancing;
+    // Financing activities are identified by specific expense categories or future loan models
+    // Interest on Loans is explicitly mentioned in requirements
+    const interestExpenses = await prisma.expense.findMany({
+      where: {
+        category: 'Interest on Loans',
+        expenseDate: {
+          gte: startDate,
+          lt: endDate,
+        },
+      },
+    });
+
+    const interestPaid = interestExpenses.reduce((sum, exp) => sum + Number(exp.amount), 0);
+    
+    // Placeholder for loan principal movements if they were tracked
+    const loanReceived = 0;
+    const loanRepayment = 0;
+    
+    const netFinancingCashFlow = loanReceived - loanRepayment - interestPaid;
 
     // ============================================
     // INVESTING ACTIVITIES
     // ============================================
-    // Currently excluded per requirements
+    // Per requirements: Display as zero
     const netInvestingCashFlow = 0;
 
     // ============================================
@@ -90,11 +118,13 @@ export async function GET(request: NextRequest) {
       operatingActivities: {
         cashReceivedFromCustomers,
         cashPaidForExpenses: cashExpenses,
+        cashPaidToSuppliers,
         netOperatingCashFlow,
       },
       financingActivities: {
-        cashFromFinancing,
-        cashPaidForFinancing,
+        loanReceived,
+        loanRepayment,
+        interestPaid,
         netFinancingCashFlow,
       },
       investingActivities: {

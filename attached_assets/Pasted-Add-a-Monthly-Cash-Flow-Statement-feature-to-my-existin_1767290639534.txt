@@ -1,0 +1,67 @@
+Add a Monthly Cash Flow Statement feature to my existing Stokkr ERP project.
+
+Important Context:
+- P&L already uses COGS (accrual-based accounting)
+- Cash Flow must be calculated only from actual cash movements
+- Cash Flow logic must remain independent from P&L logic
+
+Requirements:
+
+1. Month & Year Selection:
+- Provide selectors for Month and Year
+- Default selection = current month and year (live system date)
+- Recalculate cash flow dynamically when selection changes
+
+2. Cash Flow Structure (monthly):
+
+A. Cash from Operating Activities:
+Include only actual cash movements within the selected month:
+- Cash received from customers (invoice payments received in the selected month)
+- Cash paid for operating expenses in the selected month
+Exclude:
+- Credit sales without payment
+- Unpaid receivables
+- Inventory purchases unless recorded as cash payments
+
+Formula:
+Net Operating Cash Flow =
+Cash received from customers − Cash paid for expenses
+
+B. Cash from Financing Activities:
+Include transactions within the selected month:
+- Loan amounts received
+- Loan repayments
+- Interest paid
+
+C. Cash from Investing Activities:
+- Exclude or display as zero
+
+D. Net Cash Flow:
+Net Cash Flow =
+Net Operating Cash Flow + Net Financing Cash Flow
+
+3. UI:
+- Display the statement in a clean, accounting-style table
+- Sections:
+  - Cash from Operating Activities
+  - Cash from Financing Activities
+  - Net Cash Flow
+- Place under Dashboard / Analytics
+- Format currency values clearly
+
+4. Export:
+- Allow exporting the monthly Cash Flow Statement to CSV
+
+Rules:
+- Cash Flow must reflect only cash movement within the selected month
+- Profit or loss values must NOT appear in cash flow
+- Credit sales affect cash flow only when payment is received
+
+Constraints:
+- Do NOT refactor existing invoice, receivable, payable, expense, or P&L logic
+- Use existing payment and expense records only
+- Add minimal helper logic if required
+- Comment all calculations clearly
+
+Goal:
+The Cash Flow Statement should accurately show how cash moved during the selected month and year, independent of profitability.

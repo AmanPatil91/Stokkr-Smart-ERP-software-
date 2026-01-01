@@ -9,11 +9,13 @@ type CashFlowData = {
   operatingActivities: {
     cashReceivedFromCustomers: number;
     cashPaidForExpenses: number;
+    cashPaidToSuppliers: number;
     netOperatingCashFlow: number;
   };
   financingActivities: {
-    cashFromFinancing: number;
-    cashPaidForFinancing: number;
+    loanReceived: number;
+    loanRepayment: number;
+    interestPaid: number;
     netFinancingCashFlow: number;
   };
   investingActivities: {
@@ -73,11 +75,13 @@ export default function CashFlowPage() {
       ['CASH FROM OPERATING ACTIVITIES'],
       ['Cash received from customers', formatCurrencyForCSV(cashFlowData.operatingActivities.cashReceivedFromCustomers)],
       ['Cash paid for expenses', `(${formatCurrencyForCSV(cashFlowData.operatingActivities.cashPaidForExpenses)})`],
+      ['Cash paid to suppliers', `(${formatCurrencyForCSV(cashFlowData.operatingActivities.cashPaidToSuppliers)})`],
       ['Net Operating Cash Flow', formatCurrencyForCSV(cashFlowData.operatingActivities.netOperatingCashFlow)],
       [],
       ['CASH FROM FINANCING ACTIVITIES'],
-      ['Cash from financing', formatCurrencyForCSV(cashFlowData.financingActivities.cashFromFinancing)],
-      ['Cash paid for financing', `(${formatCurrencyForCSV(cashFlowData.financingActivities.cashPaidForFinancing)})`],
+      ['Loan amounts received', formatCurrencyForCSV(cashFlowData.financingActivities.loanReceived)],
+      ['Loan repayments', `(${formatCurrencyForCSV(cashFlowData.financingActivities.loanRepayment)})`],
+      ['Interest paid', `(${formatCurrencyForCSV(cashFlowData.financingActivities.interestPaid)})`],
       ['Net Financing Cash Flow', formatCurrencyForCSV(cashFlowData.financingActivities.netFinancingCashFlow)],
       [],
       ['NET CASH FLOW', formatCurrencyForCSV(cashFlowData.netCashFlow)],
@@ -210,6 +214,13 @@ export default function CashFlowPage() {
                     (₹{formatCurrency(cashFlowData.operatingActivities.cashPaidForExpenses).slice(1)})
                   </span>
                 </div>
+
+                <div className="flex justify-between">
+                  <span className="text-gray-700">Cash paid to suppliers</span>
+                  <span className="text-red-600 font-semibold">
+                    (₹{formatCurrency(cashFlowData.operatingActivities.cashPaidToSuppliers).slice(1)})
+                  </span>
+                </div>
               </div>
 
               <div className="border-t border-gray-300 pt-4 flex justify-between bg-green-50 p-4 rounded">
@@ -236,16 +247,23 @@ export default function CashFlowPage() {
 
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between">
-                  <span className="text-gray-700">Cash from financing</span>
+                  <span className="text-gray-700">Loan amounts received</span>
                   <span className="text-green-600 font-semibold">
-                    ₹{formatCurrency(cashFlowData.financingActivities.cashFromFinancing).slice(1)}
+                    ₹{formatCurrency(cashFlowData.financingActivities.loanReceived).slice(1)}
                   </span>
                 </div>
 
                 <div className="flex justify-between">
-                  <span className="text-gray-700">Cash paid for financing</span>
+                  <span className="text-gray-700">Loan repayments</span>
                   <span className="text-red-600 font-semibold">
-                    (₹{formatCurrency(cashFlowData.financingActivities.cashPaidForFinancing).slice(1)})
+                    (₹{formatCurrency(cashFlowData.financingActivities.loanRepayment).slice(1)})
+                  </span>
+                </div>
+
+                <div className="flex justify-between">
+                  <span className="text-gray-700">Interest paid</span>
+                  <span className="text-red-600 font-semibold">
+                    (₹{formatCurrency(cashFlowData.financingActivities.interestPaid).slice(1)})
                   </span>
                 </div>
               </div>
