@@ -69,25 +69,27 @@ export default function CashFlowPage() {
   const handleExportCSV = () => {
     if (!cashFlowData) return;
 
-    const data = [
-      ['Cash Flow Statement', `${MONTHS[selectedMonth]} ${selectedYear}`],
-      [],
+    const dataRows = [
       ['CASH FROM OPERATING ACTIVITIES'],
       ['Cash received from customers', formatCurrencyForCSV(cashFlowData.operatingActivities.cashReceivedFromCustomers)],
-      ['Cash paid for expenses', `(${formatCurrencyForCSV(cashFlowData.operatingActivities.cashPaidForExpenses)})`],
-      ['Cash paid to suppliers', `(${formatCurrencyForCSV(cashFlowData.operatingActivities.cashPaidToSuppliers)})`],
+      ['Cash paid for expenses', `-${formatCurrencyForCSV(cashFlowData.operatingActivities.cashPaidForExpenses)}`],
+      ['Cash paid to suppliers', `-${formatCurrencyForCSV(cashFlowData.operatingActivities.cashPaidToSuppliers)}`],
       ['Net Operating Cash Flow', formatCurrencyForCSV(cashFlowData.operatingActivities.netOperatingCashFlow)],
       [],
       ['CASH FROM FINANCING ACTIVITIES'],
       ['Loan amounts received', formatCurrencyForCSV(cashFlowData.financingActivities.loanReceived)],
-      ['Loan repayments', `(${formatCurrencyForCSV(cashFlowData.financingActivities.loanRepayment)})`],
-      ['Interest paid', `(${formatCurrencyForCSV(cashFlowData.financingActivities.interestPaid)})`],
+      ['Loan repayments', `-${formatCurrencyForCSV(cashFlowData.financingActivities.loanRepayment)}`],
+      ['Interest paid', `-${formatCurrencyForCSV(cashFlowData.financingActivities.interestPaid)}`],
       ['Net Financing Cash Flow', formatCurrencyForCSV(cashFlowData.financingActivities.netFinancingCashFlow)],
       [],
       ['NET CASH FLOW', formatCurrencyForCSV(cashFlowData.netCashFlow)],
     ];
 
-    exportToCSV(data, `Cash-Flow-Statement-${MONTHS[selectedMonth]}-${selectedYear}.csv`);
+    exportToCSV({
+      filename: `Cash-Flow-Statement-${MONTHS[selectedMonth]}-${selectedYear}`,
+      headers: ['Cash Flow Statement', `${MONTHS[selectedMonth]} ${selectedYear}`],
+      rows: dataRows
+    });
   };
 
   const formatCurrency = (amount: number): string => {
