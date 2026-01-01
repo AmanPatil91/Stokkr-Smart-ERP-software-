@@ -177,6 +177,12 @@ export default function DashboardPage() {
             >
               🌊 View Cash Flow
             </a>
+            <a
+              href="/reports/general-ledger"
+              className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition text-sm font-medium"
+            >
+              📖 View General Ledger
+            </a>
           </div>
         </div>
 
