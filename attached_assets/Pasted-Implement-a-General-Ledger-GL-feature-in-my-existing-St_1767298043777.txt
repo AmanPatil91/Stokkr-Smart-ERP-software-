@@ -1,0 +1,67 @@
+Implement a General Ledger (GL) feature in my existing Stokkr ERP project that can be reviewed period-wise.
+
+Goal:
+Provide a read-only, double-entry General Ledger that records all financial transactions and allows review by month and financial year.
+
+Requirements:
+
+1. Ledger Entries:
+- Automatically generate ledger entries for existing transactions:
+  - Sales invoices
+  - COGS on sale
+  - Customer payments
+  - Inventory purchases (batches)
+  - Supplier payments
+  - Expense entries
+  - Interest and tax-related entries
+- Each transaction must create balanced debit and credit entries
+- Ledger entries must reference their source records (invoiceId, batchId, expenseId, paymentId)
+
+2. Period-wise Review:
+- Allow filtering the General Ledger by:
+  - Month & Year (e.g., March 2025)
+  - Full Financial Year (e.g., Apr 2024 – Mar 2025)
+- Default view should be current month
+- Ledger data should recalculate dynamically based on selected period
+
+3. Ledger Accounts:
+Support standard ledger accounts such as:
+- Cash / Bank
+- Accounts Receivable
+- Accounts Payable
+- Inventory
+- Sales
+- Cost of Goods Sold (COGS)
+- Expenses (category-wise)
+- Interest Expense
+- Tax Payable
+
+4. General Ledger UI:
+- Create a General Ledger page under Analytics / Dashboard
+- Provide filters:
+  - Ledger Account (dropdown)
+  - Period selector (Month / Year)
+- Display columns:
+  - Date
+  - Description
+  - Debit
+  - Credit
+  - Running Balance (within selected period)
+
+5. Rules:
+- Ledger must be read-only (no manual edits)
+- Ledger is derived from existing transactions and is not the source of truth
+- Historical entries must not be modified
+- Ensure debit total equals credit total for every transaction
+
+6. Export:
+- Allow exporting the period-wise General Ledger to CSV
+
+Constraints:
+- Do NOT refactor existing invoice, inventory, expense, P&L, or cash-flow logic
+- Add minimal schema changes only if required
+- Reuse existing date and period selection patterns
+- Add clear comments explaining debit/credit logic
+
+Outcome:
+The General Ledger should allow accountants and auditors to review all transactions accurately on a monthly or yearly basis, similar to industry ERP systems.
