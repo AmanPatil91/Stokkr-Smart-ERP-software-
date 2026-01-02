@@ -8,12 +8,6 @@ export default function HomePage() {
     { href: '/accounts-receivable', label: 'Accounts Receivable', icon: '💰', desc: 'Customer Payments' },
     { href: '/accounts-payable', label: 'Accounts Payable', icon: '💳', desc: 'Supplier Payments' },
     { href: '/expenses', label: 'Track Expenses', icon: '💸', desc: 'Expense Management' },
-    { href: '/reports/cash-flow', label: 'Cash Flow', icon: '🌊', desc: 'Monthly Cash Movements' },
-    { href: '/reports/general-ledger', label: 'General Ledger', icon: '📖', desc: 'Financial Record View' },
-    { href: '/reports/credit-risk', label: 'Credit & Risk', icon: '🛡️', desc: 'Aging & Exposure Analysis' },
-    { href: '/reports/balance-sheet', label: 'Balance Sheet', icon: '⚖️', desc: 'Financial Position Snapshot' },
-    { href: '/reports/reconciliation', label: 'Cash vs Profit', icon: '🔄', desc: 'Reconciliation Analysis' },
-    { href: '/reports/exception-reports', label: 'Exception Reports', icon: '🚨', desc: 'Unusual Pattern Alerts' },
     { href: '/dashboard', label: 'View Dashboard', icon: '📊', desc: 'Analytics' },
   ];
 
