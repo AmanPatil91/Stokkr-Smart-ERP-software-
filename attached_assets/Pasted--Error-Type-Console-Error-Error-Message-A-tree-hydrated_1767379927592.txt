@@ -1,0 +1,92 @@
+## Error Type
+Console Error
+
+## Error Message
+A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <RedirectErrorBoundary router={{...}}>
+      <InnerLayoutRouter url="/" tree={[...]} cacheNode={{lazyData:null, ...}} segmentPath={[...]}>
+        <SegmentViewNode type="page" pagePath="page.tsx">
+          <SegmentTrieNode>
+          <ClientPageRoot Component={function HomePage} searchParams={{}} params={{}}>
+            <HomePage params={Promise} searchParams={Promise}>
+              <div className="min-h-scre...">
+                <div className="max-w-6xl ...">
+                  <div>
+                  <div className="mb-12">
+                    <h2>
+                    <div className="grid grid-...">
+                      <div className="bg-white r...">
+                        <div>
+                        <div className="space-y-6">
+                          <div className="space-y-4">
+                            <p>
+                            <div className="flex flex-...">
+                              <button
+                                onClick={function onClick}
+                                className="text-xs bg-indigo-50 text-indigo-700 px-3 py-2 rounded-full border border-i..."
+-                               fdprocessedid="zt409f"
+                              >
++                               Summarize expenses this month
+                              <button
+                                onClick={function onClick}
+                                className="text-xs bg-indigo-50 text-indigo-700 px-3 py-2 rounded-full border border-i..."
+-                               fdprocessedid="tsvzba"
+                              >
++                               Top customers by outstanding
+                              <button
+                                onClick={function onClick}
+                                className="text-xs bg-indigo-50 text-indigo-700 px-3 py-2 rounded-full border border-i..."
+-                               fdprocessedid="9vxw4"
+                              >
++                               Why is cash lower than profit?
+                              <button
+                                onClick={function onClick}
+                                className="text-xs bg-indigo-50 text-indigo-700 px-3 py-2 rounded-full border border-i..."
+-                               fdprocessedid="m2sn5r"
+                              >
++                               Explain why profit changed
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value=""
+                                onChange={function onChange}
+                                placeholder="Ask a question..."
+                                className="flex-1 p-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:rin..."
+-                               fdprocessedid="tgixfs"
+                              >
+                              ...
+                          ...
+                      ...
+                  ...
+        ...
+      ...
+
+
+
+    at button (<anonymous>:null:null)
+    at eval (app/page.tsx:74:23)
+    at Array.map (<anonymous>:null:null)
+    at HomePage (app/page.tsx:73:23)
+
+## Code Frame
+  72 |                       "Explain why profit changed"
+  73 |                     ].map((q) => (
+> 74 |                       <button
+     |                       ^
+  75 |                         key={q}
+  76 |                         onClick={() => { setQuestion(q); askAI(q); }}
+  77 |                         className="text-xs bg-indigo-50 text-indigo-700 px-3 py-2 rounded-full border border-indigo-100 hover:bg-indigo-100 transition-colors"
+
+Next.js version: 15.5.0 (Webpack)
