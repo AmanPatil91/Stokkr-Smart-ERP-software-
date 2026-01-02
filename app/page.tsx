@@ -13,6 +13,7 @@ export default function HomePage() {
     { href: '/reports/credit-risk', label: 'Credit & Risk', icon: '🛡️', desc: 'Aging & Exposure Analysis' },
     { href: '/reports/balance-sheet', label: 'Balance Sheet', icon: '⚖️', desc: 'Financial Position Snapshot' },
     { href: '/reports/reconciliation', label: 'Cash vs Profit', icon: '🔄', desc: 'Reconciliation Analysis' },
+    { href: '/reports/exception-reports', label: 'Exception Reports', icon: '🚨', desc: 'Unusual Pattern Alerts' },
     { href: '/dashboard', label: 'View Dashboard', icon: '📊', desc: 'Analytics' },
   ];
 

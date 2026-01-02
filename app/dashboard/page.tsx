@@ -201,6 +201,12 @@ export default function DashboardPage() {
             >
               🔄 Cash vs Profit
             </a>
+            <a
+              href="/reports/exception-reports"
+              className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition text-sm font-medium"
+            >
+              🚨 Exception Reports
+            </a>
           </div>
         </div>
 
