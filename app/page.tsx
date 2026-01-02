@@ -1,6 +1,31 @@
+'use client';
+
 import Link from 'next/link';
+import { useState } from 'react';
 
 export default function HomePage() {
+  const [insight, setInsight] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [question, setQuestion] = useState('');
+
+  const askAI = async (q: string) => {
+    setLoading(true);
+    setInsight('');
+    try {
+      const res = await fetch('/api/ai/insights', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q })
+      });
+      const data = await res.json();
+      setInsight(data.insight);
+    } catch (err) {
+      setInsight('Failed to fetch insights. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const modules = [
     { href: '/parties', label: 'Manage Parties', icon: '👥', desc: 'Customers & Suppliers' },
     { href: '/sales/new', label: 'Create Sales Invoice', icon: '📋', desc: 'New Invoice' },
@@ -18,6 +43,72 @@ export default function HomePage() {
         <div className="mb-12">
           <h1 className="text-3xl font-bold text-gray-900">Welcome to your ERP</h1>
           <p className="text-gray-600 mt-2">Manage your business operations efficiently</p>
+        </div>
+
+        {/* Business Insights Assistant Section */}
+        <div className="mb-12 bg-white rounded-xl shadow-sm border border-indigo-100 p-8">
+          <div className="flex items-center gap-3 mb-6">
+            <span className="text-3xl">🤖</span>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Business Insights Assistant</h2>
+              <p className="text-sm text-gray-500 italic">"AI-generated insights for informational purposes only."</p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="space-y-4">
+              <p className="text-sm font-medium text-gray-700">Quick Questions:</p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  "Summarize expenses this month",
+                  "Top customers by outstanding",
+                  "Why is cash lower than profit?",
+                  "Explain why profit changed"
+                ].map((q) => (
+                  <button
+                    key={q}
+                    onClick={() => { setQuestion(q); askAI(q); }}
+                    className="text-xs bg-indigo-50 text-indigo-700 px-3 py-2 rounded-full border border-indigo-100 hover:bg-indigo-100 transition-colors"
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  placeholder="Ask a question about your business..."
+                  className="flex-1 p-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                />
+                <button
+                  onClick={() => askAI(question)}
+                  disabled={loading || !question}
+                  className="bg-indigo-600 text-white px-6 py-3 rounded-lg text-sm font-bold disabled:bg-gray-300 hover:bg-indigo-700 transition-colors"
+                >
+                  Ask
+                </button>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 rounded-xl p-6 min-h-[150px] border border-gray-100 flex flex-col justify-center">
+              {loading ? (
+                <div className="flex items-center justify-center gap-3 text-indigo-600">
+                  <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                  <span className="text-sm font-medium">Analysing your data...</span>
+                </div>
+              ) : insight ? (
+                <div className="prose prose-sm text-gray-700 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                  {insight}
+                </div>
+              ) : (
+                <p className="text-gray-400 text-sm text-center italic">
+                  Select a quick question or type your own to get instant business insights.
+                </p>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Module Cards Grid */}
