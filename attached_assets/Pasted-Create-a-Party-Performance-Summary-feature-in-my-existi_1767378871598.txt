@@ -1,0 +1,66 @@
+Create a Party Performance Summary feature in my existing Stokkr ERP project.
+
+Important:
+- Do NOT modify database schemas
+- Do NOT refactor invoice, payment, or receivable/payable logic
+- This feature must be derived, read-only, and analytical only
+
+Goal:
+Provide a consolidated performance view for each customer and supplier to support distributor operations and credit decisions.
+
+Requirements:
+
+1. Party Scope:
+- Support both Customers and Suppliers
+- Allow filtering by:
+  - Party type (Customer / Supplier)
+  - Month and Year
+- Default view = current month
+
+2. Metrics to Display (Derived):
+
+For Customers:
+- Total Sales:
+  Sum of invoice taxable values for the selected period
+- Outstanding Balance:
+  Sum of unpaid invoice balances
+- Average Payment Delay:
+  Average number of days between invoice date and payment date
+  (For unpaid invoices, calculate delay till current date)
+
+For Suppliers:
+- Total Purchases:
+  Sum of purchase/batch values for the selected period
+- Outstanding Payables:
+  Sum of unpaid supplier balances
+- Average Payment Delay:
+  Average number of days between purchase date and payment date
+  (For unpaid payables, calculate delay till current date)
+
+3. Calculation Rules:
+- All metrics must be computed dynamically from existing invoices, batches, and payments
+- No manual edits allowed
+- Exclude GST from sales and purchase totals
+
+4. UI:
+- Add a “Party Performance” view under Dashboard / Analytics
+- Display data in a sortable table with columns:
+  - Party Name
+  - Total Sales / Purchases
+  - Outstanding Balance
+  - Avg Payment Delay (days)
+- Use color indicators:
+  - Green → healthy
+  - Yellow → moderate delay
+  - Red → high delay
+
+5. Export:
+- Allow CSV export of the Party Performance Summary for the selected period
+
+6. Safety Rules:
+- Read-only view only
+- No enforcement or blocking logic
+- No changes to existing workflows
+
+Outcome:
+Provide distributor-friendly visibility into customer and supplier behavior to support credit management and operational decisions.

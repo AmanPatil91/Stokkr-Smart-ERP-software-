@@ -207,6 +207,12 @@ export default function DashboardPage() {
             >
               🚨 Exception Reports
             </a>
+            <a
+              href="/reports/party-performance"
+              className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition text-sm font-medium"
+            >
+              📈 Party Performance
+            </a>
           </div>
         </div>
 
