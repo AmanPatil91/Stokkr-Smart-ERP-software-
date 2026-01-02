@@ -5,9 +5,9 @@ import { calculateFifoCogs, reduceBatchQuantities } from '@/lib/cogsCalculator';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { partyId, items } = body;
+    const { partyId, items, totalAmount: providedTotal } = body;
 
-    const totalAmount = items.reduce(
+    const totalAmount = providedTotal || items.reduce(
       (sum: number, item: any) => sum + item.quantity * item.pricePerItem,
       0
     );
