@@ -1,0 +1,70 @@
+Create a Cash vs Profit Reconciliation feature in my existing Stokkr ERP project.
+
+Important:
+- Do NOT refactor existing Profit & Loss or Cash Flow logic
+- Do NOT add new database tables
+- This feature must be derived, read-only, and for analysis only
+
+Goal:
+Explain why Net Profit and Net Cash Flow differ for a selected period.
+
+Requirements:
+
+1. Period Selection:
+- Allow selecting Month and Year
+- Use the same period selector as P&L and Cash Flow
+- Default to current month
+
+2. Base Values (Derived):
+- Net Profit:
+  Use existing Profit & Loss calculation for the selected period
+- Net Cash Flow:
+  Use existing Cash Flow calculation for the same period
+
+3. Reconciliation Components:
+Derive and display the following reconciling items:
+
+a) Credit Sales Impact (Receivables):
+- Increase in accounts receivable during the period
+- Explanation: Sales recorded as profit but cash not yet received
+
+b) Outstanding Payables Impact:
+- Increase or decrease in accounts payable during the period
+- Explanation: Expenses or purchases recorded but cash not yet paid
+
+c) Inventory Impact:
+- Difference between inventory purchased and COGS recognized
+- Explanation: Cash spent on inventory not yet sold
+
+d) Loan Principal Movements:
+- Loan principal repayments or receipts
+- Explanation: Affects cash flow but not profit
+
+4. Reconciliation Format:
+Display reconciliation in a step-by-step format:
+
+Net Profit
++ / − Change in Receivables
++ / − Change in Payables
++ / − Inventory Impact
++ / − Loan Principal Movements
+= Net Cash Flow
+
+5. UI:
+- Add a “Cash vs Profit Reconciliation” section under Dashboard / Analytics
+- Display as a clear table with:
+  - Item
+  - Amount
+  - Short explanation
+- Keep layout simple and accountant-friendly
+
+6. Rules:
+- All values must be derived from existing data
+- No manual adjustments allowed
+- No enforcement or blocking logic
+
+7. Export:
+- Allow CSV export of the reconciliation for the selected period
+
+Outcome:
+Users should clearly understand the difference between profitability and liquidity caused by credit sales, outstanding balances, inventory movements, and loan repayments.

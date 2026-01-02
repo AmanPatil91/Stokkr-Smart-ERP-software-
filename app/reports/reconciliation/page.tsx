@@ -62,9 +62,10 @@ export default function ReconciliationPage() {
   };
 
   const formatCurrency = (amount: number): string => {
-    const sign = amount < 0 ? '-' : '+';
     const absVal = Math.abs(amount);
-    return `${sign} ₹${absVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const formatted = absVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (amount === 0) return `₹${formatted}`;
+    return `${amount < 0 ? '-' : '+'} ₹${formatted}`;
   };
 
   const years = Array.from({ length: 5 }, (_, i) => today.getFullYear() - 2 + i);

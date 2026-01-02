@@ -51,12 +51,13 @@ export async function GET(request: NextRequest) {
     // If Revenue > Payments, AR increased (Profit > Cash)
     const arImpact = customerPayments - revenue;
 
-    // b) Change in AP: (Expenses - Supplier Payments) - Simplified
-    // Note: We use supplier payments vs COGS/Purchases logic for inventory
-    const apImpact = expenses + supplierPayments; // This is a placeholder for more complex logic if needed
+    // b) Change in AP: (Expenses - Supplier Payments)
+    // Note: Supplier payments for inventory purchases also impact cash but not profit (until sold)
+    const apImpact = supplierPayments - cogs;
 
-    // c) Inventory Impact: (COGS - Cash Paid for Inventory)
-    // Inventory Impact = COGS - Supplier Payments (assuming supplier payments are only for inventory)
+    // c) Inventory Impact: (Purchases vs COGS)
+    // This represents cash spent on stock that hasn't been recognized as expense yet
+    // Total Purchases = Supplier Payments (approx for this model)
     const inventoryImpact = cogs - supplierPayments;
 
     // d) Loan Principal (Placeholder)
@@ -68,21 +69,26 @@ export async function GET(request: NextRequest) {
       netCashFlow,
       adjustments: [
         {
-          label: 'Change in Accounts Receivable',
+          label: 'Credit Sales Impact (Receivables)',
           value: arImpact,
           explanation: arImpact < 0 
-            ? 'Revenue recognized but cash not yet collected from credit sales.' 
-            : 'Cash collected from prior months\' credit sales.'
+            ? 'Sales recorded as profit, but cash not yet received (AR increase).' 
+            : 'Cash collected from prior months\' credit sales (AR decrease).'
         },
         {
-          label: 'Inventory & Payable Impact',
+          label: 'Outstanding Payables Impact',
+          value: supplierPayments - cogs, // Adjusted for clearer logic
+          explanation: 'Expenses or purchases recorded but cash not yet paid.'
+        },
+        {
+          label: 'Inventory Impact',
           value: inventoryImpact,
-          explanation: 'Difference between cost of goods sold and actual cash paid to suppliers for stock.'
+          explanation: 'Cash spent on inventory that has not yet been sold (COGS vs Purchases).'
         },
         {
-          label: 'Non-Cash Interest / Principal',
+          label: 'Loan Principal Movements',
           value: loanPrincipalImpact,
-          explanation: 'Adjustments for loan movements which affect cash but not profit.'
+          explanation: 'Loan repayments or receipts that affect cash flow but not profit.'
         }
       ]
     });
