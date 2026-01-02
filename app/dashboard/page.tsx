@@ -183,6 +183,12 @@ export default function DashboardPage() {
             >
               📖 View General Ledger
             </a>
+            <a
+              href="/reports/credit-risk"
+              className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition text-sm font-medium"
+            >
+              🛡️ Credit & Risk
+            </a>
           </div>
         </div>
 
