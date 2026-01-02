@@ -12,6 +12,7 @@ export default function HomePage() {
     { href: '/reports/general-ledger', label: 'General Ledger', icon: '📖', desc: 'Financial Record View' },
     { href: '/reports/credit-risk', label: 'Credit & Risk', icon: '🛡️', desc: 'Aging & Exposure Analysis' },
     { href: '/reports/balance-sheet', label: 'Balance Sheet', icon: '⚖️', desc: 'Financial Position Snapshot' },
+    { href: '/reports/reconciliation', label: 'Cash vs Profit', icon: '🔄', desc: 'Reconciliation Analysis' },
     { href: '/dashboard', label: 'View Dashboard', icon: '📊', desc: 'Analytics' },
   ];
 

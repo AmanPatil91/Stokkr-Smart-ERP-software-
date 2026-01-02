@@ -195,6 +195,12 @@ export default function DashboardPage() {
             >
               ⚖️ Balance Sheet
             </a>
+            <a
+              href="/reports/reconciliation"
+              className="px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition text-sm font-medium"
+            >
+              🔄 Cash vs Profit
+            </a>
           </div>
         </div>
 

@@ -1,0 +1,67 @@
+Create a Cash vs Profit Reconciliation feature in my existing Stokkr ERP project.
+
+Important:
+- Do NOT refactor existing Profit & Loss or Cash Flow logic
+- Do NOT add new accounting tables
+- This feature must be derived and read-only
+
+Goal:
+Help users understand why Net Profit and Net Cash Flow differ for a selected period.
+
+Requirements:
+
+1. Period Selection:
+- Allow selecting Month and Year
+- Use the same period selector as P&L and Cash Flow
+- Default = current month
+
+2. Data Inputs (Derived):
+- Net Profit:
+  Use the existing Profit & Loss calculation for the selected period
+
+- Net Cash Flow:
+  Use the existing Cash Flow calculation for the same period
+
+3. Reconciliation Breakdown:
+Compute and display key reconciling items:
+
+a) Change in Accounts Receivable:
+- Increase in receivables due to credit sales
+- Explanation: Sales recorded but cash not yet received
+
+b) Change in Accounts Payable:
+- Increase or decrease in payables
+- Explanation: Expenses or purchases recorded but cash not yet paid
+
+c) Inventory Impact:
+- Difference caused by inventory purchased but not sold (COGS vs purchases)
+
+d) Loan & Interest Impact:
+- Loan principal affects cash but not profit
+- Interest affects profit but not loan balance
+
+4. Reconciliation Logic:
+Display reconciliation in the following format:
+
+Net Profit
++ / − Change in Receivables
++ / − Change in Payables
++ / − Inventory Impact
++ / − Loan Principal Movements
+= Net Cash Flow
+
+5. UI:
+- Add a “Cash vs Profit Reconciliation” section under Dashboard / Analytics
+- Display as a simple table or step-by-step breakdown
+- Use clear labels and short explanations for each adjustment
+
+6. Rules:
+- All values must be derived from existing data
+- No manual adjustments allowed
+- Keep calculations transparent and well-commented
+
+7. Export:
+- Allow CSV export of the reconciliation for the selected period
+
+Outcome:
+Users should clearly understand why profitability and liquidity differ for a given month, similar to real-world financial analysis used by accountants and management.
