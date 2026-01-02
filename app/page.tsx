@@ -45,68 +45,104 @@ export default function HomePage() {
           <p className="text-gray-600 mt-2">Manage your business operations efficiently</p>
         </div>
 
-        {/* Business Insights Assistant Section */}
-        <div className="mb-12 bg-white rounded-xl shadow-sm border border-indigo-100 p-8">
-          <div className="flex items-center gap-3 mb-6">
-            <span className="text-3xl">🤖</span>
-            <div>
-              <h2 className="text-xl font-bold text-gray-900">Business Insights Assistant</h2>
-              <p className="text-sm text-gray-500 italic">"AI-generated insights for informational purposes only."</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="space-y-4">
-              <p className="text-sm font-medium text-gray-700">Quick Questions:</p>
-              <div className="flex flex-wrap gap-2">
-                {[
-                  "Summarize expenses this month",
-                  "Top customers by outstanding",
-                  "Why is cash lower than profit?",
-                  "Explain why profit changed"
-                ].map((q) => (
-                  <button
-                    key={q}
-                    onClick={() => { setQuestion(q); askAI(q); }}
-                    className="text-xs bg-indigo-50 text-indigo-700 px-3 py-2 rounded-full border border-indigo-100 hover:bg-indigo-100 transition-colors"
-                  >
-                    {q}
-                  </button>
-                ))}
+        {/* AI Features Section */}
+        <div className="mb-12">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+            <span>✨</span> AI Features
+          </h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Business Insights Assistant Card */}
+            <div className="bg-white rounded-xl shadow-sm border border-indigo-100 p-8">
+              <div className="flex items-center gap-3 mb-6">
+                <span className="text-3xl">🤖</span>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Business Insights Assistant</h2>
+                  <p className="text-sm text-gray-500 italic">"AI-generated insights for informational purposes only."</p>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={question}
-                  onChange={(e) => setQuestion(e.target.value)}
-                  placeholder="Ask a question about your business..."
-                  className="flex-1 p-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                />
-                <button
-                  onClick={() => askAI(question)}
-                  disabled={loading || !question}
-                  className="bg-indigo-600 text-white px-6 py-3 rounded-lg text-sm font-bold disabled:bg-gray-300 hover:bg-indigo-700 transition-colors"
+
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  <p className="text-sm font-medium text-gray-700">Quick Questions:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      "Summarize expenses this month",
+                      "Top customers by outstanding",
+                      "Why is cash lower than profit?",
+                      "Explain why profit changed"
+                    ].map((q) => (
+                      <button
+                        key={q}
+                        onClick={() => { setQuestion(q); askAI(q); }}
+                        className="text-xs bg-indigo-50 text-indigo-700 px-3 py-2 rounded-full border border-indigo-100 hover:bg-indigo-100 transition-colors"
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={question}
+                      onChange={(e) => setQuestion(e.target.value)}
+                      placeholder="Ask a question..."
+                      className="flex-1 p-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                    <button
+                      onClick={() => askAI(question)}
+                      disabled={loading || !question}
+                      className="bg-indigo-600 text-white px-6 py-3 rounded-lg text-sm font-bold disabled:bg-gray-300 hover:bg-indigo-700 transition-colors"
+                    >
+                      Ask
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 rounded-xl p-6 min-h-[150px] border border-gray-100 flex flex-col justify-center">
+                  {loading ? (
+                    <div className="flex items-center justify-center gap-3 text-indigo-600">
+                      <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-sm font-medium">Analysing your data...</span>
+                    </div>
+                  ) : insight ? (
+                    <div className="prose prose-sm text-gray-700">
+                      {insight}
+                    </div>
+                  ) : (
+                    <p className="text-gray-400 text-sm text-center italic">
+                      Select a question to get instant business insights.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* AI Chatbot Card */}
+            <div className="bg-white rounded-xl shadow-sm border border-emerald-100 p-8 flex flex-col">
+              <div className="flex items-center gap-3 mb-6">
+                <span className="text-3xl">💬</span>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">AI Chatbot</h2>
+                  <p className="text-sm text-gray-500 italic">"General assistance and support"</p>
+                </div>
+              </div>
+              <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
+                <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center text-2xl text-emerald-600">
+                  ⚡
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Coming Soon</h3>
+                  <p className="text-sm text-gray-500 mt-1 max-w-[250px]">
+                    We're working on a fully integrated chatbot to help with more complex tasks.
+                  </p>
+                </div>
+                <button 
+                  disabled
+                  className="mt-4 px-6 py-2 bg-gray-100 text-gray-400 rounded-lg text-sm font-semibold cursor-not-allowed"
                 >
-                  Ask
+                  Open Chatbot
                 </button>
               </div>
-            </div>
-
-            <div className="bg-gray-50 rounded-xl p-6 min-h-[150px] border border-gray-100 flex flex-col justify-center">
-              {loading ? (
-                <div className="flex items-center justify-center gap-3 text-indigo-600">
-                  <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                  <span className="text-sm font-medium">Analysing your data...</span>
-                </div>
-              ) : insight ? (
-                <div className="prose prose-sm text-gray-700 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                  {insight}
-                </div>
-              ) : (
-                <p className="text-gray-400 text-sm text-center italic">
-                  Select a quick question or type your own to get instant business insights.
-                </p>
-              )}
             </div>
           </div>
         </div>
