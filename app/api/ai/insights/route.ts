@@ -34,10 +34,12 @@ export async function POST(request: NextRequest) {
       return acc;
     }, {});
 
+    const totalExpenses = Object.values(expenseSummary).reduce((a: any, b: any) => Number(a) + Number(b), 0);
+
     const context = `
       Current Month Metrics:
       - Total Sales (Taxable): ₹${Number(sales._sum.totalAmount || 0).toLocaleString()}
-      - Total Expenses: ₹${Object.values(expenseSummary).reduce((a: any, b: any) => a + b, 0).toLocaleString()}
+      - Total Expenses: ₹${Number(totalExpenses).toLocaleString()}
       - Expense Breakdown: ${JSON.stringify(expenseSummary)}
       - Total Receivables (Unpaid Sales): ₹${Number(ar._sum.receivableAmount || 0).toLocaleString()}
       - Total Payables (Unpaid Purchases): ₹${Number(ap._sum.payableAmount || 0).toLocaleString()}
@@ -58,8 +60,9 @@ export async function POST(request: NextRequest) {
       insight: response.choices[0].message.content,
       disclaimer: 'AI-generated insights for informational purposes only.'
     });
-  } catch (error: any) {
-    console.error('Insights API Error:', error);
-    return NextResponse.json({ error: 'Failed to generate insights' }, { status: 500 });
-  }
+    } catch (err: unknown) {
+      const error = err as Error;
+      console.error('Insights API Error:', error);
+      return NextResponse.json({ error: 'Failed to generate insights' }, { status: 500 });
+    }
 }
