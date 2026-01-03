@@ -22,14 +22,20 @@ export default function HomePage() {
     setLoading(true);
 
     try {
+      console.log('HomePage: Sending question to AI...', q);
       const res = await fetch('/api/ai/insights', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: q })
       });
+      
       const data = await res.json();
-      setChatHistory(prev => [...prev, { role: 'ai' as const, content: data.insight }]);
+      console.log('HomePage: AI Response received', data);
+      
+      const reply = data.reply || data.insight || 'I received an unexpected response format.';
+      setChatHistory(prev => [...prev, { role: 'ai' as const, content: reply }]);
     } catch (err) {
+      console.error('HomePage: AI Error', err);
       setChatHistory(prev => [...prev, { role: 'ai' as const, content: 'Failed to fetch insights. Please try again.' }]);
     } finally {
       setLoading(false);

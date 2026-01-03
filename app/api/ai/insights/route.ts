@@ -7,8 +7,19 @@ const openai = new OpenAI({
 });
 
 export async function POST(request: NextRequest) {
+  console.log('AI Insights API: Request received');
   try {
+    const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
+    if (!apiKey) {
+      console.error('AI Insights API: Missing API Key');
+      return NextResponse.json({ reply: 'AI configuration is missing. Please check API keys.' }, { status: 500 });
+    }
+
     const { question } = await request.json();
+    if (!question) {
+      return NextResponse.json({ reply: 'Please provide a question.' }, { status: 400 });
+    }
+
     const today = new Date();
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
@@ -67,6 +78,7 @@ export async function POST(request: NextRequest) {
       - Total Payables (Unpaid Purchases): ₹${Number(ap._sum.payableAmount || 0).toLocaleString()}
     `;
 
+    console.log('AI Insights API: Calling OpenAI...');
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
@@ -78,13 +90,16 @@ export async function POST(request: NextRequest) {
       ],
     });
 
+    const reply = response.choices[0]?.message?.content || 'I could not generate a response at this time.';
+    console.log('AI Insights API: AI call successful');
+
     return NextResponse.json({ 
-      insight: response.choices[0].message.content,
+      reply: reply,
       disclaimer: 'AI-generated insights for informational purposes only.'
     });
     } catch (err: unknown) {
       const error = err as Error;
-      console.error('Insights API Error:', error);
-      return NextResponse.json({ error: 'Failed to generate insights' }, { status: 500 });
+      console.error('AI Insights API Error:', error.message);
+      return NextResponse.json({ reply: 'Failed to generate insights. Please try again later.' }, { status: 500 });
     }
 }
