@@ -1,0 +1,62 @@
+Add an AI Chatbot feature to my existing Stokkr ERP project.
+
+Important:
+- Do NOT modify database schemas
+- Do NOT change business logic, accounting logic, or workflows
+- The chatbot must be strictly read-only
+- The chatbot must work both on Replit and when running locally
+
+Goal:
+Provide a conversational Business Insights Assistant that explains existing business data in natural language.
+
+Architecture & Behavior:
+
+1. Chatbot Role:
+- Acts as a Business Insights Assistant
+- Explains data, trends, and summaries
+- Must NOT make decisions, approvals, or data changes
+
+2. Supported Questions:
+The chatbot should answer queries such as:
+- “What are my sales this month?”
+- “Summarize expenses for this month”
+- “Why did profit change compared to last month?”
+- “Which customers have the highest outstanding?”
+- “What products are low in stock?”
+- “Why is cash lower than profit?”
+
+3. Data Access Rules:
+- Use only existing derived data from:
+  - Profit & Loss
+  - Cash Flow
+  - Receivables & Payables
+  - Expenses
+  - Inventory summaries
+- Fetch data only through existing backend APIs or service functions
+- Must NOT query the database directly
+
+4. Explanation Logic:
+- Convert numeric data into clear, human-readable explanations
+- Compare current period vs previous period when relevant
+- Highlight key contributors (top expenses, overdue customers, sales trends)
+
+5. UI Integration:
+- Add a Chatbot panel under the “Business Insights Assistant” section on the Home page
+- Provide:
+  - Text input for user questions
+  - Scrollable chat history
+  - Clear visual distinction between user messages and AI responses
+
+6. Safety & Guardrails:
+- Clearly label responses as informational / AI-generated
+- No write operations or side effects
+- No enforcement or automation
+- If data is unavailable, respond gracefully with guidance
+
+7. Local Compatibility:
+- Load AI API keys from environment variables
+- Do NOT hardcode secrets
+- Ensure the chatbot functions when the project is run locally
+
+Outcome:
+Enable users to understand business performance through conversational explanations while preserving data integrity and portability.

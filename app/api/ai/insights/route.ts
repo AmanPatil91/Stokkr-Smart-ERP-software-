@@ -13,19 +13,33 @@ export async function POST(request: NextRequest) {
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
     // Fetch context data in parallel
-    const [expenses, sales, ar, ap] = await Promise.all([
-      prisma.expense.findMany({ where: { expenseDate: { gte: startOfMonth } } }),
+    const [expenses, sales, ar, ap, inventory, cashFlow] = await Promise.all([
+      prisma.expense.findMany({ 
+        where: { expenseDate: { gte: startOfMonth } },
+        orderBy: { amount: 'desc' },
+        take: 10
+      }),
       prisma.invoice.aggregate({
         where: { invoiceType: 'SALES', date: { gte: startOfMonth } },
         _sum: { totalAmount: true }
       }),
-      prisma.accountsReceivable.aggregate({
+      prisma.accountsReceivable.findMany({
         where: { paymentStatus: 'PENDING' },
-        _sum: { receivableAmount: true }
+        orderBy: { receivableAmount: 'desc' },
+        take: 5
       }),
       prisma.accountsPayable.aggregate({
         where: { paymentStatus: 'PENDING' },
         _sum: { payableAmount: true }
+      }),
+      prisma.batch.findMany({
+        where: { quantity: { lt: 10 } },
+        include: { product: true },
+        take: 5
+      }),
+      prisma.invoice.aggregate({
+        where: { invoiceType: 'PURCHASE', date: { gte: startOfMonth } },
+        _sum: { totalAmount: true }
       })
     ]);
 
@@ -35,13 +49,21 @@ export async function POST(request: NextRequest) {
     }, {});
 
     const totalExpenses = Object.values(expenseSummary).reduce((a: any, b: any) => Number(a) + Number(b), 0);
+    const totalSales = Number(sales._sum.totalAmount || 0);
+    const totalPurchases = Number(cashFlow._sum.totalAmount || 0);
+    const totalReceivables = ar.reduce((sum, item) => sum + Number(item.receivableAmount), 0);
+    
+    const lowStock = inventory.map(i => `${i.product.name} (Qty: ${i.quantity})`).join(', ');
+    const topDebtors = ar.map(a => `${a.partyId}: ₹${Number(a.receivableAmount).toLocaleString()}`).join(', ');
 
     const context = `
       Current Month Metrics:
-      - Total Sales (Taxable): ₹${Number(sales._sum.totalAmount || 0).toLocaleString()}
-      - Total Expenses: ₹${Number(totalExpenses).toLocaleString()}
+      - Total Sales: ₹${totalSales.toLocaleString()}
+      - Total Purchases (Cash Outflow Potential): ₹${totalPurchases.toLocaleString()}
+      - Total Expenses: ₹${totalExpenses.toLocaleString()}
       - Expense Breakdown: ${JSON.stringify(expenseSummary)}
-      - Total Receivables (Unpaid Sales): ₹${Number(ar._sum.receivableAmount || 0).toLocaleString()}
+      - Top Debtors: ${topDebtors}
+      - Low Stock Items: ${lowStock || 'None'}
       - Total Payables (Unpaid Purchases): ₹${Number(ap._sum.payableAmount || 0).toLocaleString()}
     `;
 

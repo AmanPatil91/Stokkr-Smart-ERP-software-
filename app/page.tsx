@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 
 export default function HomePage() {
-  const [insight, setInsight] = useState('');
+  const [chatHistory, setChatHistory] = useState<{role: 'user' | 'ai', content: string}[]>([]);
   const [loading, setLoading] = useState(false);
   const [question, setQuestion] = useState('');
   const [mounted, setMounted] = useState(false);
@@ -14,8 +14,13 @@ export default function HomePage() {
   }, []);
 
   const askAI = async (q: string) => {
+    if (!q.trim()) return;
+    
+    const userMessage = { role: 'user' as const, content: q };
+    setChatHistory(prev => [...prev, userMessage]);
+    setQuestion('');
     setLoading(true);
-    setInsight('');
+
     try {
       const res = await fetch('/api/ai/insights', {
         method: 'POST',
@@ -23,9 +28,9 @@ export default function HomePage() {
         body: JSON.stringify({ question: q })
       });
       const data = await res.json();
-      setInsight(data.insight);
+      setChatHistory(prev => [...prev, { role: 'ai' as const, content: data.insight }]);
     } catch (err) {
-      setInsight('Failed to fetch insights. Please try again.');
+      setChatHistory(prev => [...prev, { role: 'ai' as const, content: 'Failed to fetch insights. Please try again.' }]);
     } finally {
       setLoading(false);
     }
@@ -58,7 +63,7 @@ export default function HomePage() {
             </h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Business Insights Assistant Card */}
-              <div className="bg-white rounded-xl shadow-sm border border-indigo-100 p-8">
+              <div className="bg-white rounded-xl shadow-sm border border-indigo-100 p-8 flex flex-col h-[600px]">
                 <div className="flex items-center gap-3 mb-6">
                   <span className="text-3xl">🤖</span>
                   <div>
@@ -67,58 +72,81 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                <div className="space-y-6">
-                  <div className="space-y-4">
-                    <p className="text-sm font-medium text-gray-700">Quick Questions:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        "Summarize expenses this month",
-                        "Top customers by outstanding",
-                        "Why is cash lower than profit?",
-                        "Explain why profit changed"
-                      ].map((q) => (
-                        <button
-                          key={q}
-                          onClick={() => { setQuestion(q); askAI(q); }}
-                          className="text-xs bg-indigo-50 text-indigo-700 px-3 py-2 rounded-full border border-indigo-100 hover:bg-indigo-100 transition-colors"
-                        >
-                          {q}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={question}
-                        onChange={(e) => setQuestion(e.target.value)}
-                        placeholder="Ask a question..."
-                        className="flex-1 p-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                      />
-                      <button
-                        onClick={() => askAI(question)}
-                        disabled={loading || !question}
-                        className="bg-indigo-600 text-white px-6 py-3 rounded-lg text-sm font-bold disabled:bg-gray-300 hover:bg-indigo-700 transition-colors"
-                      >
-                        Ask
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 rounded-xl p-6 min-h-[150px] border border-gray-100 flex flex-col justify-center">
-                    {loading ? (
-                      <div className="flex items-center justify-center gap-3 text-indigo-600">
-                        <div className="w-5 h-5 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                        <span className="text-sm font-medium">Analysing your data...</span>
-                      </div>
-                    ) : insight ? (
-                      <div className="prose prose-sm text-gray-700">
-                        {insight}
+                <div className="flex-1 flex flex-col min-h-0">
+                  {/* Chat History */}
+                  <div className="flex-1 overflow-y-auto mb-4 space-y-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    {chatHistory.length === 0 ? (
+                      <div className="h-full flex flex-col items-center justify-center text-center p-6">
+                        <p className="text-gray-400 text-sm italic mb-4">
+                          Ask a question to get instant business insights.
+                        </p>
+                        <div className="flex flex-wrap gap-2 justify-center">
+                          {[
+                            "What are my sales this month?",
+                            "Summarize expenses",
+                            "Low stock products?",
+                            "Top debtors?"
+                          ].map((q) => (
+                            <button
+                              key={q}
+                              onClick={() => askAI(q)}
+                              className="text-xs bg-white text-indigo-700 px-3 py-2 rounded-full border border-indigo-100 hover:bg-indigo-50 transition-colors shadow-sm"
+                            >
+                              {q}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     ) : (
-                      <p className="text-gray-400 text-sm text-center italic">
-                        Select a question to get instant business insights.
-                      </p>
+                      <>
+                        {chatHistory.map((msg, i) => (
+                          <div
+                            key={i}
+                            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                          >
+                            <div
+                              className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm ${
+                                msg.role === 'user'
+                                  ? 'bg-indigo-600 text-white rounded-tr-none'
+                                  : 'bg-white text-gray-700 border border-gray-200 rounded-tl-none shadow-sm'
+                              }`}
+                            >
+                              {msg.content}
+                            </div>
+                          </div>
+                        ))}
+                        {loading && (
+                          <div className="flex justify-start">
+                            <div className="bg-white border border-gray-200 rounded-2xl rounded-tl-none px-4 py-2 shadow-sm">
+                              <div className="flex gap-1">
+                                <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></span>
+                                <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:0.2s]"></span>
+                                <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:0.4s]"></span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
+                  </div>
+
+                  {/* Input area */}
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={question}
+                      onChange={(e) => setQuestion(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && askAI(question)}
+                      placeholder="Ask about your business..."
+                      className="flex-1 p-3 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                    />
+                    <button
+                      onClick={() => askAI(question)}
+                      disabled={loading || !question.trim()}
+                      className="bg-indigo-600 text-white px-6 py-3 rounded-lg text-sm font-bold disabled:bg-gray-300 hover:bg-indigo-700 transition-colors"
+                    >
+                      Send
+                    </button>
                   </div>
                 </div>
               </div>
