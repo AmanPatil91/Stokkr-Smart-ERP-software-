@@ -8,18 +8,11 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
     const baseURL = process.env.AI_INTEGRATIONS_OPENAI_BASE_URL;
 
-    if (!apiKey) {
-      console.error('AI Insights API: Missing API Key');
-      return NextResponse.json({ 
-        reply: 'AI configuration is missing. Please check your environment variables.' 
-      }, { status: 500 });
-    }
-
-    // Initialize OpenAI client with base URL if provided (for Replit integration)
-    // or default to OpenAI (for local/standard usage)
+    // Replit AI Integrations uses a managed environment. 
+    // The apiKey might be a dummy value, which is expected when baseURL is present.
     const openai = new OpenAI({
-      apiKey: apiKey,
-      ...(baseURL ? { baseURL } : {}),
+      apiKey: apiKey || 'dummy',
+      baseURL: baseURL || undefined,
     });
 
     const { question } = await request.json();
