@@ -2,18 +2,24 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-});
-
 export async function POST(request: NextRequest) {
   console.log('AI Insights API: Request received');
   try {
     const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
-    if (!apiKey) {
-      console.error('AI Insights API: Missing API Key');
-      return NextResponse.json({ reply: 'AI configuration is missing. Please check API keys.' }, { status: 500 });
+    
+    // Check if API key is missing or is the Replit dummy key
+    if (!apiKey || apiKey.includes('DUMMY')) {
+      console.error('AI Insights API: Invalid or Missing API Key');
+      return NextResponse.json({ 
+        reply: 'AI service is not configured correctly. Please ensure a valid OpenAI API key is set in your environment variables.' 
+      }, { status: 500 });
     }
+
+    // Initialize OpenAI client inside the handler to ensure it uses the latest environment variables
+    const openai = new OpenAI({
+      apiKey: apiKey,
+      baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL || undefined,
+    });
 
     const { question } = await request.json();
     if (!question) {
@@ -23,36 +29,36 @@ export async function POST(request: NextRequest) {
     const today = new Date();
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-    // Fetch context data in parallel
+    // Fetch context data in parallel with safe defaults
     const [expenses, sales, ar, ap, inventory, cashFlow] = await Promise.all([
       prisma.expense.findMany({ 
         where: { expenseDate: { gte: startOfMonth } },
         orderBy: { amount: 'desc' },
         take: 10
-      }),
+      }).catch(() => []),
       prisma.invoice.aggregate({
         where: { invoiceType: 'SALES', date: { gte: startOfMonth } },
         _sum: { totalAmount: true }
-      }),
+      }).catch(() => ({ _sum: { totalAmount: null } })),
       prisma.accountsReceivable.findMany({
         where: { paymentStatus: 'PENDING' },
         include: { invoice: { include: { party: true } } },
         orderBy: { receivableAmount: 'desc' },
         take: 5
-      }),
+      }).catch(() => []),
       prisma.accountsPayable.aggregate({
         where: { paymentStatus: 'PENDING' },
         _sum: { payableAmount: true }
-      }),
+      }).catch(() => ({ _sum: { payableAmount: null } })),
       prisma.batch.findMany({
         where: { quantity: { lt: 10 } },
         include: { product: true },
         take: 5
-      }),
+      }).catch(() => []),
       prisma.invoice.aggregate({
         where: { invoiceType: 'PURCHASE', date: { gte: startOfMonth } },
         _sum: { totalAmount: true }
-      })
+      }).catch(() => ({ _sum: { totalAmount: null } }))
     ]);
 
     const expenseSummary = expenses.reduce((acc: any, exp) => {
@@ -64,8 +70,8 @@ export async function POST(request: NextRequest) {
     const totalSales = Number(sales._sum.totalAmount || 0);
     const totalPurchases = Number(cashFlow._sum.totalAmount || 0);
     
-    const lowStock = inventory.map(i => `${i.product.name} (Qty: ${i.quantity})`).join(', ');
-    const topDebtors = ar.map(a => `${a.invoice.party.name}: ₹${Number(a.receivableAmount).toLocaleString()}`).join(', ');
+    const lowStock = inventory.map(i => `${i.product.name} (Qty: ${i.quantity})`).join(', ') || 'None';
+    const topDebtors = ar.map(a => `${a.invoice?.party?.name || 'Unknown'}: ₹${Number(a.receivableAmount).toLocaleString()}`).join(', ') || 'None';
 
     const context = `
       Current Month Metrics:
@@ -73,13 +79,13 @@ export async function POST(request: NextRequest) {
       - Total Purchases: ₹${totalPurchases.toLocaleString()}
       - Total Expenses: ₹${totalExpenses.toLocaleString()}
       - Expense Breakdown: ${JSON.stringify(expenseSummary)}
-      - Top Debtors: ${topDebtors || 'None'}
-      - Low Stock Items: ${lowStock || 'None'}
+      - Top Debtors: ${topDebtors}
+      - Low Stock Items: ${lowStock}
       - Total Payables (Unpaid Purchases): ₹${Number(ap._sum.payableAmount || 0).toLocaleString()}
     `;
 
     console.log('AI Insights API: Calling OpenAI...');
-    const response = await openai.chat.completions.create({
+    const aiResponse = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
@@ -90,16 +96,23 @@ export async function POST(request: NextRequest) {
       ],
     });
 
-    const reply = response.choices[0]?.message?.content || 'I could not generate a response at this time.';
+    const reply = aiResponse.choices[0]?.message?.content || 'I could not generate a response at this time.';
     console.log('AI Insights API: AI call successful');
 
     return NextResponse.json({ 
       reply: reply,
       disclaimer: 'AI-generated insights for informational purposes only.'
     });
-    } catch (err: unknown) {
-      const error = err as Error;
-      console.error('AI Insights API Error:', error.message);
-      return NextResponse.json({ reply: 'Failed to generate insights. Please try again later.' }, { status: 500 });
+  } catch (err: any) {
+    console.error('AI Insights API Error:', err.message || err);
+    let errorMessage = 'Failed to generate insights. Please try again later.';
+    
+    if (err.status === 401) {
+      errorMessage = 'AI service authentication failed. The API key might be invalid.';
+    } else if (err.status === 429) {
+      errorMessage = 'AI service is currently busy (Rate limit exceeded). Please try again in a moment.';
     }
+
+    return NextResponse.json({ reply: errorMessage }, { status: 500 });
+  }
 }
