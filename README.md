@@ -1,186 +1,114 @@
+# Stokkr ERP - Smart Inventory & Financial Management
 
-# STOKKR – Smart ERP for Distributors & SMEs
+Stokkr is a smart ERP system designed for Small and Medium Enterprises (SMEs) to manage inventory, sales, and financial health with precision. It focuses on batch-wise tracking and accurate profit calculation using FIFO-based Cost of Goods Sold (COGS).
 
-Stokkr is a **web-based ERP system** designed for small and medium businesses, especially **FMCG distributors** (e.g., Parle distributors).
-It focuses on **inventory control, accounting accuracy, and financial clarity**, similar to industry tools like Marg ERP.
+## 🚀 Core Features
 
-
-
-## 🚀 Key Features
-
-### 1️⃣ Billing & Party Management
-
-* Create and manage **sales invoices**
-* Track **payment status** (Pending / Completed)
-* Manage **customers and suppliers** in a centralized Party module
-* Support for **partial payments** and outstanding balances
-
----
-
-### 2️⃣ Inventory Management
-
-* Real-time stock tracking
-* **Batch-wise inventory management**
-* **Expiry date tracking** for perishable goods
-* Low-stock and expiring-soon indicators
-* FIFO-based stock usage for accurate accounting
-
----
-
-### 3️⃣ Accounts Receivable & Payable
-
-* **Receivables**: Track customer dues invoice-wise
-* **Payables**: Track supplier dues batch-wise
-* Automatic payment status updates
-* Clear visibility of pending and completed payments
-
----
-
-### 4️⃣ Expense Tracking
-
-* Record operational expenses such as:
-
-  * Rent
-  * Transportation
-  * Salaries
-  * Maintenance
-  * Interest on loans
-* Category-wise expense management
-* Monthly expense summaries
-
----
-
-### 5️⃣ Profit & Loss Statement (Industry-Standard)
-
-* Month & year selectable P&L
-* Uses **Cost of Goods Sold (COGS)** to ensure accurate profit calculation
-* Includes:
-
-  * Sales
-  * COGS
-  * Operating expenses
-  * Interest cost
-  * Configurable tax
-* Prevents artificial losses due to unsold inventory
-
----
-
-### 6️⃣ Cash Flow Statement
-
-* Monthly cash flow analysis
-* Based strictly on **actual cash movements**
-* Separates profit from liquidity
-* Includes:
-
-  * Cash received from customers
-  * Cash paid for expenses
-  * Loan-related cash movements
-
----
-
-### 7️⃣ Dashboard & Analytics
-
-* Financial health KPIs:
-
-  * Monthly sales
-  * Monthly expenses
-  * Net profit / loss
-  * Outstanding amount
-* Month & year selectors
-* Clean, ERP-style dashboard layout
-
----
-
-### 8️⃣ Data Export
-
-* CSV export support for:
-
-  * Expenses
-  * Receivables
-  * Payables
-  * Monthly P&L
-  * Cash Flow statements
-
----
+- **Sales Invoicing**: Create professional sales invoices with automated inventory deductions.
+- **Inventory & Batch Tracking**: Monitor stock levels with batch-wise details, including expiry dates and low-stock alerts.
+- **Expense Tracking**: Record and categorize operating expenses (Rent, Salaries, Transportation, etc.).
+- **Accounts Receivable & Payable**: Track customer dues and supplier payments with invoice-level detail.
+- **Dashboard Analytics**: Real-time KPIs for monthly sales, expenses, and net profit.
+- **Business Insights Assistant**: A read-only AI chatbot that provides natural language summaries of your business data.
+- **Financial Reports**: Derived reports including Profit & Loss (P&L), Cash Flow, and Balance Sheets.
 
 ## 🛠 Tech Stack
 
-* **Frontend & Backend**: Next.js (App Router), TypeScript
-* **Database**: PostgreSQL with Prisma ORM
-* **Authentication**: Firebase Auth + NextAuth.js
-* **UI**: Tailwind CSS, Lucide Icons
+- **Frontend**: [Next.js](https://nextjs.org/) (App Router)
+- **Backend**: Next.js API Routes
+- **Database**: PostgreSQL
+- **ORM**: [Prisma](https://www.prisma.io/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **AI**: OpenAI (GPT-4o-mini) for read-only business insights
 
----
+## 📋 Prerequisites
 
-## 💻 Local Setup
+Before you begin, ensure you have the following installed:
+- **Node.js**: v18 or higher
+- **npm**: (comes with Node.js)
+- **PostgreSQL**: Local installation or a cloud-hosted instance
+- **Git**: To clone the repository
 
-### 1. Prerequisites
+## ⚙️ Getting Started
 
-* Node.js (v18+)
-* npm
-* PostgreSQL
-
-### 2. Clone & Install
+### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/AmanPatil91/Stokkr-Smart-ERP-software-.git
-cd Stokkr-Smart-ERP-software-
+git clone <repo-url>
+cd stokkr-erp
+```
+
+### 2. Install Dependencies
+
+```bash
 npm install
 ```
 
-### 3. Environment Variables
+### 3. Environment Variables Setup
 
-Create `.env.local` in the root directory:
+Create a file named `.env.local` in the root directory and add the following variables:
 
 ```env
-DATABASE_URL="postgresql://user:password@localhost:5432/stokkr_db"
+# Database connection string
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
 
-NEXTAUTH_URL="http://localhost:3000"
-NEXTAUTH_SECRET="your_secret"
+# NextAuth configuration
+NEXTAUTH_SECRET="your-generated-secret-key"
+NEXTAUTH_URL="http://localhost:5000"
 
-NEXT_PUBLIC_FIREBASE_API_KEY="..."
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN="..."
-NEXT_PUBLIC_FIREBASE_PROJECT_ID="..."
-
-FIREBASE_PROJECT_ID="..."
-FIREBASE_CLIENT_EMAIL="..."
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+# AI Integration (OpenAI)
+AI_INTEGRATIONS_OPENAI_API_KEY="your-openai-api-key"
+# Optional: Set this if using a custom base URL (e.g., Replit AI Integration)
+# AI_INTEGRATIONS_OPENAI_BASE_URL="https://proxy.replit.com/..."
 ```
 
-### 4. Initialize Database
+> **Note**: Always restart your development server after changing environment variables. Never commit your `.env.local` file to version control.
+
+### 4. Database Setup
+
+Ensure your PostgreSQL instance is running, then run the following commands to initialize your database:
 
 ```bash
-npx prisma db push
+# Generate the Prisma client based on the schema
 npx prisma generate
+
+# Push the schema to your database (or use 'migrate dev' for versioned migrations)
+npx prisma db push
 ```
 
-### 5. Run the App
+- `prisma generate`: Updates the local TypeScript types to match your database structure.
+- `prisma db push`: Syncs your Prisma schema directly with your database (ideal for development).
+
+### 5. Running the Project
+
+Start the development server:
 
 ```bash
 npm run dev
 ```
 
-Open 👉 `http://localhost:3000`
+The application will be available at [http://localhost:5000](http://localhost:5000).
+
+## 📊 Demo Data (Optional)
+
+To see the dashboards and AI insights in action, you can manually add sample data:
+1. Create a few **Products** in the Inventory section.
+2. Add **Batches** to those products to establish stock.
+3. Record **Sales Invoices** and **Expenses**.
+This data is stored in your local database and can be safely modified or deleted at any time.
+
+## 🤖 AI Features Note
+
+- The **Business Insights Assistant** is strictly **read-only**. It analyzes your database records to provide summaries but cannot modify any data.
+- AI features require a valid API key in the environment variables.
+- The core ERP functionality (billing, inventory, reports) works perfectly even if AI is disabled or the API key is missing.
+
+## 🔧 Troubleshooting
+
+- **Prisma Client Errors**: If you encounter issues with database queries, try running `npx prisma generate` again.
+- **Database Connection**: Verify your `DATABASE_URL` matches your local PostgreSQL credentials and that the service is running.
+- **AI Not Responding**: Ensure `AI_INTEGRATIONS_OPENAI_API_KEY` is set correctly. Check the server logs for specific error codes.
+- **Port Conflict**: If port 5000 is in use, you can change it in `package.json` under the `dev` script.
 
 ---
-
-## 🎯 Project Objective
-
-Stokkr was built as an **industrial ERP project** to demonstrate:
-
-* Correct accounting principles (COGS, accrual vs cash flow)
-* Real-world distributor workflows
-* Clean system design with scalable architecture
-* Practical financial reporting for SMEs
-
----
-
-## 📌 Ideal Use Case
-
-* FMCG distributors
-* Wholesale businesses
-* Small trading firms
-* Academic / industrial ERP demonstrations
-
-
-
+*Built with precision for modern business management.*
