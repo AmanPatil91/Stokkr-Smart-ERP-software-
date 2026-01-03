@@ -25,6 +25,7 @@ export async function POST(request: NextRequest) {
       }),
       prisma.accountsReceivable.findMany({
         where: { paymentStatus: 'PENDING' },
+        include: { invoice: { include: { party: true } } },
         orderBy: { receivableAmount: 'desc' },
         take: 5
       }),
@@ -48,21 +49,20 @@ export async function POST(request: NextRequest) {
       return acc;
     }, {});
 
-    const totalExpenses = Object.values(expenseSummary).reduce((a: any, b: any) => Number(a) + Number(b), 0);
+    const totalExpenses = Number(Object.values(expenseSummary).reduce((a: any, b: any) => Number(a) + Number(b), 0));
     const totalSales = Number(sales._sum.totalAmount || 0);
     const totalPurchases = Number(cashFlow._sum.totalAmount || 0);
-    const totalReceivables = ar.reduce((sum, item) => sum + Number(item.receivableAmount), 0);
     
     const lowStock = inventory.map(i => `${i.product.name} (Qty: ${i.quantity})`).join(', ');
-    const topDebtors = ar.map(a => `${a.partyId}: ₹${Number(a.receivableAmount).toLocaleString()}`).join(', ');
+    const topDebtors = ar.map(a => `${a.invoice.party.name}: ₹${Number(a.receivableAmount).toLocaleString()}`).join(', ');
 
     const context = `
       Current Month Metrics:
       - Total Sales: ₹${totalSales.toLocaleString()}
-      - Total Purchases (Cash Outflow Potential): ₹${totalPurchases.toLocaleString()}
+      - Total Purchases: ₹${totalPurchases.toLocaleString()}
       - Total Expenses: ₹${totalExpenses.toLocaleString()}
       - Expense Breakdown: ${JSON.stringify(expenseSummary)}
-      - Top Debtors: ${topDebtors}
+      - Top Debtors: ${topDebtors || 'None'}
       - Low Stock Items: ${lowStock || 'None'}
       - Total Payables (Unpaid Purchases): ₹${Number(ap._sum.payableAmount || 0).toLocaleString()}
     `;

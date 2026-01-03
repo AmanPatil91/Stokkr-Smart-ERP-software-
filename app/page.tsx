@@ -61,7 +61,7 @@ export default function HomePage() {
             <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
               <span>✨</span> AI Features
             </h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6">
               {/* Business Insights Assistant Card */}
               <div className="bg-white rounded-xl shadow-sm border border-indigo-100 p-8 flex flex-col h-[600px]">
                 <div className="flex items-center gap-3 mb-6">
@@ -148,34 +148,6 @@ export default function HomePage() {
                       Send
                     </button>
                   </div>
-                </div>
-              </div>
-
-              {/* AI Chatbot Card */}
-              <div className="bg-white rounded-xl shadow-sm border border-emerald-100 p-8 flex flex-col">
-                <div className="flex items-center gap-3 mb-6">
-                  <span className="text-3xl">💬</span>
-                  <div>
-                    <h2 className="text-xl font-bold text-gray-900">AI Chatbot</h2>
-                    <p className="text-sm text-gray-500 italic">"General assistance and support"</p>
-                  </div>
-                </div>
-                <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4">
-                  <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center text-2xl text-emerald-600">
-                    ⚡
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Coming Soon</h3>
-                    <p className="text-sm text-gray-500 mt-1 max-w-[250px]">
-                      We're working on a fully integrated chatbot to help with more complex tasks.
-                    </p>
-                  </div>
-                  <button 
-                    disabled
-                    className="mt-4 px-6 py-2 bg-gray-100 text-gray-400 rounded-lg text-sm font-semibold cursor-not-allowed"
-                  >
-                    Open Chatbot
-                  </button>
                 </div>
               </div>
             </div>
