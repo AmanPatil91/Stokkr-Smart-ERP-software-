@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
 
-// GET all accounts payable
+// GET all accounts payable records
 export async function GET() {
   try {
     const payables = await prisma.accountsPayable.findMany({
@@ -12,12 +12,18 @@ export async function GET() {
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
-    });
+      orderBy: {
+        createdAt: 'desc',
+      },
+    })
 
-    return NextResponse.json(payables);
+    return NextResponse.json(payables)
   } catch (error) {
-    console.error('Failed to fetch accounts payable:', error);
-    return NextResponse.json({ error: 'Failed to fetch accounts payable' }, { status: 500 });
+    console.error('Failed to fetch accounts payable:', error)
+  
+    return NextResponse.json(
+      { error: 'Failed to fetch accounts payable' },
+      { status: 500 }
+    )
   }
 }
