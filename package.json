@@ -3,11 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 5000 -H 0.0.0.0",
-    "build": "next build",
-    "start": "next start -p 5000 -H 0.0.0.0",
-    "lint": "eslint"
-  },
+  "dev": "next dev",
+  "build": "prisma generate && next build",
+  "start": "next start",
+  "lint": "eslint",
+  "prisma:generate": "prisma generate",
+  "prisma:migrate": "prisma migrate deploy"
+}
+,
   "dependencies": {
     "@prisma/client": "6.15.0",
     "drizzle-zod": "^0.8.3",
