@@ -1,23 +1,19 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql" // or "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-// User & Role Management
 model User {
   id            String    @id @default(cuid())
   name          String?
   email         String?   @unique
   emailVerified DateTime?
   image         String?
-  role          String    @default("STAFF") // "ADMIN" or "STAFF"
+  role          String    @default("STAFF")
   accounts      Account[]
   sessions      Session[]
 }
@@ -48,145 +44,129 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// Inventory Management
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
 
-
-// Existing Product model
-model Product {
-  id                      String             @id @default(cuid())
-  name                    String
-  sku                     String             @unique
-  description             String?
-  price                   Decimal            @db.Decimal(10, 2)
-  cost                    Decimal            @db.Decimal(10, 2)
-  expiryAlertDays         Int                @default(7)  // Days before expiry to trigger alert
-  lowStockAlertQty        Int                @default(10) // Minimum stock threshold
-  batches                 Batch[]
-  stockTransactions       StockTransaction[]
-  invoiceItems            InvoiceItem[]
+  @@unique([identifier, token])
 }
 
+model Product {
+  id                String             @id @default(cuid())
+  name              String
+  sku               String             @unique
+  description       String?
+  price             Decimal            @db.Decimal(10, 2)
+  cost              Decimal            @db.Decimal(10, 2)
+  expiryAlertDays   Int                @default(7)
+  lowStockAlertQty  Int                @default(10)
+  batches           Batch[]
+  invoiceItems      InvoiceItem[]
+  stockTransactions StockTransaction[]
+}
 
 model Batch {
-  id            String             @id @default(cuid())
-  batchNumber   String
-  expiryDate    DateTime
-  quantity      Int
-  costPerItem   Decimal            @db.Decimal(10, 2)
-  productId     String
-  product       Product            @relation(fields: [productId], references: [id])
+  id                String             @id @default(cuid())
+  batchNumber       String
+  expiryDate        DateTime
+  quantity          Int
+  costPerItem       Decimal            @db.Decimal(10, 2)
+  productId         String
+  accountsPayable   AccountsPayable?
+  product           Product            @relation(fields: [productId], references: [id])
   stockTransactions StockTransaction[]
-  // AP/AR: Link to accounts payable (for purchase batches)
-  accountsPayable AccountsPayable?
 }
-
 
 model StockTransaction {
-  id            String         @id @default(cuid())
-  productId     String
-  product       Product        @relation(fields: [productId], references: [id])
-  batchId       String?        // 👈 Add this field
-  batch         Batch?         @relation(fields: [batchId], references: [id]) // 👈 Add this relationship
-  transactionType String         // "IN" or "OUT"
-  quantity      Int
-  date          DateTime       @default(now())
-  notes         String?
+  id              String   @id @default(cuid())
+  productId       String
+  batchId         String?
+  transactionType String
+  quantity        Int
+  date            DateTime @default(now())
+  notes           String?
+  batch           Batch?   @relation(fields: [batchId], references: [id])
+  product         Product  @relation(fields: [productId], references: [id])
 }
 
-// Accounting & Billing
-
-
 model Party {
-  id              String              @id @default(cuid())
-  name            String
-  partyType       String              // "CUSTOMER" or "SUPPLIER"
-  contactNumber   String?             // 👈 Add this field
-  email           String?             // 👈 Add this field
-  gstin           String?
-  invoices        Invoice[]
+  id                 String              @id @default(cuid())
+  name               String
+  partyType          String
+  contactNumber      String?
+  email              String?
+  gstin              String?
+  invoices           Invoice[]
   ledgerTransactions LedgerTransaction[]
 }
 
 model Invoice {
-  id            String        @id @default(cuid())
-  invoiceNumber String        @unique
-  invoiceType   String        // "SALES" or "PURCHASE"
-  date          DateTime      @default(now())
-  totalAmount   Decimal       @db.Decimal(10, 2)
-  partyId       String
-  party         Party         @relation(fields: [partyId], references: [id])
-  items         InvoiceItem[]
-  // AP/AR: Link to accounts receivable (for SALES invoices only)
+  id                 String              @id @default(cuid())
+  invoiceNumber      String              @unique
+  invoiceType        String
+  date               DateTime            @default(now())
+  totalAmount        Decimal             @db.Decimal(10, 2)
+  partyId            String
   accountsReceivable AccountsReceivable?
+  party              Party               @relation(fields: [partyId], references: [id])
+  items              InvoiceItem[]
 }
 
 model InvoiceItem {
-  id            String  @id @default(cuid())
-  invoiceId     String
-  invoice       Invoice @relation(fields: [invoiceId], references: [id])
-  productId     String
-  product       Product @relation(fields: [productId], references: [id])
-  quantity      Int
-  pricePerItem  Decimal @db.Decimal(10, 2)
-  subtotal      Decimal @db.Decimal(10, 2)
-  
-  // FIFO COGS: Cost of Goods Sold calculated at invoice creation time
-  // For SALES invoices: COGS per item = weighted average cost from batches used (FIFO)
-  // For PURCHASE invoices: COGS fields remain NULL as purchases don't have COGS
-  cogsPerItem   Decimal? @db.Decimal(10, 2) // FIFO cost per item for sales
-  cogsTotal     Decimal? @db.Decimal(10, 2) // Total COGS = cogsPerItem × quantity
+  id           String   @id @default(cuid())
+  invoiceId    String
+  productId    String
+  quantity     Int
+  pricePerItem Decimal  @db.Decimal(10, 2)
+  subtotal     Decimal  @db.Decimal(10, 2)
+  cogsPerItem  Decimal? @db.Decimal(10, 2)
+  cogsTotal    Decimal? @db.Decimal(10, 2)
+  invoice      Invoice  @relation(fields: [invoiceId], references: [id])
+  product      Product  @relation(fields: [productId], references: [id])
 }
 
 model LedgerTransaction {
-  id            String    @id @default(cuid())
-  partyId       String
-  party         Party     @relation(fields: [partyId], references: [id])
-  transactionType String    // "DEBIT" or "CREDIT"
-  amount        Decimal   @db.Decimal(10, 2)
-  date          DateTime  @default(now())
-  description   String
+  id              String   @id @default(cuid())
+  partyId         String
+  transactionType String
+  amount          Decimal  @db.Decimal(10, 2)
+  date            DateTime @default(now())
+  description     String
+  party           Party    @relation(fields: [partyId], references: [id])
 }
 
-// Expense Tracking
 model Expense {
-  id              String    @id @default(cuid())
-  category        String    // "Rent", "Electricity", "Transportation Cost", "Staff Salary", "Loading / Unloading", "Packaging", "Office Supplies", "Internet / Mobile", "Maintenance", "Interest on Loans", "Miscellaneous"
-  title           String    // Description / Title
-  amount          Decimal   @db.Decimal(10, 2) // Must be positive
-  expenseDate     DateTime  // Expense Date
-  paymentMode     String    // "Cash", "Bank", "UPI"
-  referenceNumber String?   // Optional reference number
-  notes           String?   // Optional notes
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id              String   @id @default(cuid())
+  category        String
+  title           String
+  amount          Decimal  @db.Decimal(10, 2)
+  expenseDate     DateTime
+  paymentMode     String
+  referenceNumber String?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
-// Accounts Payable - Tracks money owed to suppliers via purchase batches
 model AccountsPayable {
-  id              String    @id @default(cuid())
-  batchId         String    @unique
-  batch           Batch     @relation(fields: [batchId], references: [id], onDelete: Cascade)
-  // Total batch amount (cost per item * quantity)
-  totalAmount     Decimal   @db.Decimal(10, 2)
-  // Payable amount defaults to total, can be reduced for partial payments
-  payableAmount   Decimal   @db.Decimal(10, 2)
-  // Payment status: "PENDING" if payableAmount > 0, "COMPLETED" if payableAmount = 0
-  paymentStatus   String    @default("PENDING") // "PENDING" or "COMPLETED"
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id            String   @id @default(cuid())
+  batchId       String   @unique
+  totalAmount   Decimal  @db.Decimal(10, 2)
+  payableAmount Decimal  @db.Decimal(10, 2)
+  paymentStatus String   @default("PENDING")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  batch         Batch    @relation(fields: [batchId], references: [id], onDelete: Cascade)
 }
 
-// Accounts Receivable - Tracks money owed by customers via sales invoices
 model AccountsReceivable {
-  id              String    @id @default(cuid())
-  invoiceId       String    @unique
-  invoice         Invoice   @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  // Total invoice amount
-  totalAmount     Decimal   @db.Decimal(10, 2)
-  // Receivable amount defaults to total, can be reduced for partial payments
-  receivableAmount Decimal   @db.Decimal(10, 2)
-  // Payment status: "PENDING" if receivableAmount > 0, "COMPLETED" if receivableAmount = 0
-  paymentStatus   String    @default("PENDING") // "PENDING" or "COMPLETED"
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id               String   @id @default(cuid())
+  invoiceId        String   @unique
+  totalAmount      Decimal  @db.Decimal(10, 2)
+  receivableAmount Decimal  @db.Decimal(10, 2)
+  paymentStatus    String   @default("PENDING")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  invoice          Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 }
