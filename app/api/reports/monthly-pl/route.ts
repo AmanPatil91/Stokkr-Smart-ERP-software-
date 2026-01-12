@@ -49,11 +49,16 @@ export async function GET() {
       totalExpenses: expenses,
       netProfitLoss: netProfitLoss,
     });
-  } catch (error) {
-    console.error('Failed to fetch monthly P&L:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch monthly P&L.' },
-      { status: 500 }
-    );
-  }
+  } catch (error: any) {
+  console.error('MONTHLY PL ERROR 👉', error)
+
+  return NextResponse.json(
+    {
+      error: 'Failed to fetch monthly P&L.',
+      details: error?.message ?? String(error),
+    },
+    { status: 500 }
+  )
+}
+
 }
