@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { exportToCSV, formatCurrencyForCSV } from '@/lib/csvExport';
+import { formatINR } from '@/lib/currency';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -38,16 +39,16 @@ export default function ExceptionReportsPage() {
   const handleExportCSV = () => {
     if (!data) return;
     const rows: any[][] = [];
-    
+
     rows.push(['EXPENSE ALERTS']);
     rows.push(['Category', 'Previous', 'Current', '% Change']);
     data.expenseAlerts.forEach((a: any) => rows.push([a.category, a.previous, a.current, a.change.toFixed(2)]));
-    
+
     rows.push([]);
     rows.push(['SALES ALERTS']);
     rows.push(['Previous Sales', 'Current Sales', '% Change']);
     data.salesAlerts.forEach((a: any) => rows.push([a.previous, a.current, a.change.toFixed(2)]));
-    
+
     rows.push([]);
     rows.push(['RECEIVABLE ALERTS (60+ DAYS)']);
     rows.push(['Customer', 'Reference', 'Amount', 'Days Overdue']);
@@ -60,7 +61,7 @@ export default function ExceptionReportsPage() {
     });
   };
 
-  const formatCurrency = (amt: number) => `₹${amt.toLocaleString('en-IN')}`;
+  const formatCurrency = formatINR;
 
   if (loading) return <div className="p-8 text-center">Analysing data for exceptions...</div>;
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { exportToCSV, formatCurrencyForCSV } from '@/lib/csvExport';
+import { formatINR } from '@/lib/currency';
 
 type LedgerRow = {
   date: string;
@@ -75,12 +76,7 @@ export default function GeneralLedgerPage() {
     });
   };
 
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-    }).format(amount);
-  };
+  const formatCurrency = formatINR;
 
   const years = Array.from({ length: 5 }, (_, i) => today.getFullYear() - 2 + i);
 

@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { formatINR } from '@/lib/currency';
 import { exportToCSV, formatCurrencyForCSV } from '@/lib/csvExport';
 
 type SalesSummary = {
@@ -47,6 +49,27 @@ type FinancialHealth = {
   totalPayable: string;
 };
 
+type TurnoverItem = {
+  id: string;
+  name: string;
+  sku: string;
+  soldQty: number;
+  currentStock: number;
+  turnoverRatio: number;
+  status: string;
+};
+
+type TurnoverData = {
+  periodDays: number;
+  metrics: {
+    overallTurnoverRatio: number;
+  };
+  rankings: {
+    fastMoving: TurnoverItem[];
+    slowMoving: TurnoverItem[];
+  };
+};
+
 export default function DashboardPage() {
   const [salesData, setSalesData] = useState<SalesSummary | null>(null);
   const [stockData, setStockData] = useState<StockItem[] | null>(null);
@@ -54,9 +77,10 @@ export default function DashboardPage() {
   const [lowStockProducts, setLowStockProducts] = useState<LowStockProduct[]>([]);
   const [monthlyPL, setMonthlyPL] = useState<MonthlyPL | null>(null);
   const [financialHealth, setFinancialHealth] = useState<FinancialHealth | null>(null);
+  const [turnoverData, setTurnoverData] = useState<TurnoverData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   // Month selector state - default to current month
   const today = new Date();
   const [selectedMonth, setSelectedMonth] = useState<number>(today.getMonth());
@@ -78,14 +102,15 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [salesResponse, stockResponse, alertsResponse, plResponse] = await Promise.all([
+        const [salesResponse, stockResponse, alertsResponse, plResponse, turnoverResponse] = await Promise.all([
           fetch('/api/reports/sales-summary'),
           fetch('/api/reports/stock-summary'),
           fetch('/api/alerts'),
           fetch('/api/reports/monthly-pl'),
+          fetch('/api/inventory-turnover'),
         ]);
 
-        if (!salesResponse.ok || !stockResponse.ok || !alertsResponse.ok || !plResponse.ok) {
+        if (!salesResponse.ok || !stockResponse.ok || !alertsResponse.ok || !plResponse.ok || !turnoverResponse.ok) {
           throw new Error('Failed to fetch dashboard data.');
         }
 
@@ -93,16 +118,19 @@ export default function DashboardPage() {
         const stock = await stockResponse.json();
         const alerts = await alertsResponse.json();
         const pl = await plResponse.json();
+        const turnover = await turnoverResponse.json();
 
+        const formatCurrency = formatINR;
         const formattedSales = {
           totalSales: sales.totalSales ? parseFloat(sales.totalSales) : 0,
         };
-        
+
         setSalesData(formattedSales);
         setStockData(stock);
         setExpiringBatches(alerts.expiringBatches || []);
         setLowStockProducts(alerts.lowStockProducts || []);
         setMonthlyPL(pl);
+        setTurnoverData(turnover);
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -110,7 +138,7 @@ export default function DashboardPage() {
       }
     };
     fetchData();
-    
+
     // Fetch financial health for current month on load
     fetchFinancialHealth(selectedMonth, selectedYear);
   }, []);
@@ -360,6 +388,120 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Inventory Turnover Analytics */}
+        {turnoverData && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <span className="text-2xl">⚡</span> Inventory Efficiency
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">Based on the last {turnoverData.periodDays} days</p>
+              </div>
+              <div className="mt-4 sm:mt-0 flex items-center bg-gray-50 rounded-lg p-3 border border-gray-100">
+                <div className="mr-4">
+                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Overall Ratio</p>
+                  <p className="text-2xl font-bold text-indigo-600">{turnoverData.metrics.overallTurnoverRatio.toFixed(2)}</p>
+                </div>
+                <div className={`px-3 py-1.5 rounded-md text-xs font-bold ${turnoverData.metrics.overallTurnoverRatio > 3 ? 'bg-green-100 text-green-700' :
+                  turnoverData.metrics.overallTurnoverRatio < 1 ? 'bg-orange-100 text-orange-700' :
+                    'bg-blue-100 text-blue-700'
+                  }`}>
+                  {turnoverData.metrics.overallTurnoverRatio > 3 ? 'High (Fast Selling)' :
+                    turnoverData.metrics.overallTurnoverRatio < 1 ? 'Low (Slow Moving)' :
+                      'Healthy'}
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Fast Moving */}
+              <div className="border border-green-100 rounded-lg overflow-hidden">
+                <div className="bg-green-50 px-4 py-3 border-b border-green-100">
+                  <h3 className="font-semibold text-green-800 flex items-center gap-2">
+                    <span className="text-lg">🏃</span> Top Fast-Moving Items
+                  </h3>
+                </div>
+                <div className="p-0">
+                  {turnoverData.rankings.fastMoving.length > 0 ? (
+                    <table className="w-full text-sm text-left">
+                      <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
+                        <tr>
+                          <th className="px-4 py-2">Item</th>
+                          <th className="px-3 py-2 text-right">Sold</th>
+                          <th className="px-3 py-2 text-right">Stock</th>
+                          <th className="px-4 py-2 text-right">Ratio</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {turnoverData.rankings.fastMoving.map(item => (
+                          <tr key={item.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3">
+                              <p className="font-medium text-gray-900 truncate max-w-[150px]">{item.name}</p>
+                              <p className="text-xs text-gray-500">{item.sku}</p>
+                            </td>
+                            <td className="px-3 py-3 text-right font-medium">{item.soldQty}</td>
+                            <td className="px-3 py-3 text-right">{item.currentStock}</td>
+                            <td className="px-4 py-3 text-right">
+                              <span className="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-bold">
+                                {item.turnoverRatio === 999 ? 'MAX' : item.turnoverRatio.toFixed(1)}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p className="text-sm text-gray-500 p-4 text-center">No fast-moving items currently.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Slow Moving */}
+              <div className="border border-orange-100 rounded-lg overflow-hidden">
+                <div className="bg-orange-50 px-4 py-3 border-b border-orange-100">
+                  <h3 className="font-semibold text-orange-800 flex items-center gap-2">
+                    <span className="text-lg">🐌</span> Top Slow-Moving Items (Dead Stock)
+                  </h3>
+                </div>
+                <div className="p-0">
+                  {turnoverData.rankings.slowMoving.length > 0 ? (
+                    <table className="w-full text-sm text-left">
+                      <thead className="bg-gray-50 text-gray-600 text-xs uppercase">
+                        <tr>
+                          <th className="px-4 py-2">Item</th>
+                          <th className="px-3 py-2 text-right">Sold</th>
+                          <th className="px-3 py-2 text-right">Stock</th>
+                          <th className="px-4 py-2 text-right">Ratio</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {turnoverData.rankings.slowMoving.map(item => (
+                          <tr key={item.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3">
+                              <p className="font-medium text-gray-900 truncate max-w-[150px]">{item.name}</p>
+                              <p className="text-xs text-gray-500">{item.sku}</p>
+                            </td>
+                            <td className="px-3 py-3 text-right font-medium">{item.soldQty}</td>
+                            <td className="px-3 py-3 text-right">{item.currentStock}</td>
+                            <td className="px-4 py-3 text-right">
+                              <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded text-xs font-bold">
+                                {item.turnoverRatio.toFixed(2)}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p className="text-sm text-gray-500 p-4 text-center">No slow-moving items detected.</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Inventory Alerts */}
         {(expiringBatches.length > 0 || lowStockProducts.length > 0) && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -376,11 +518,10 @@ export default function DashboardPage() {
                           <p className="text-xs text-gray-600">Batch: {batch.batchNumber}</p>
                           <p className="text-xs text-gray-600">Expires: {new Date(batch.expiryDate).toLocaleDateString()}</p>
                         </div>
-                        <span className={`px-2 py-1 rounded text-xs font-semibold ${
-                          batch.status === 'EXPIRED' 
-                            ? 'bg-red-100 text-red-800' 
-                            : 'bg-orange-100 text-orange-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded text-xs font-semibold ${batch.status === 'EXPIRED'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-orange-100 text-orange-800'
+                          }`}>
                           {batch.remainingDays < 0 ? 'EXPIRED' : `${batch.remainingDays}d`}
                         </span>
                       </div>

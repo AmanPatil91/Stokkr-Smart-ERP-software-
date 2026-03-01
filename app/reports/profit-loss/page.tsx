@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { exportToCSV, formatCurrencyForCSV } from '@/lib/csvExport';
+import { formatINR } from '@/lib/currency';
 
 type InvoiceItem = {
   cogsTotal: number | null;
@@ -175,13 +176,7 @@ export default function ProfitLossPage() {
   const plStatement = calculatePL();
 
   // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
+  const formatCurrency = formatINR;
 
   // Export P&L statement to CSV
   const handleExport = () => {
@@ -449,9 +444,8 @@ export default function ProfitLossPage() {
                 {/* Net Profit / Loss */}
                 <tr className={`${plStatement.netProfit >= 0 ? 'bg-green-50 hover:bg-green-100' : 'bg-red-50 hover:bg-red-100'}`}>
                   <td className="px-6 py-4 font-bold text-gray-900 text-lg">Net Profit / Loss</td>
-                  <td className={`px-6 py-4 text-right font-bold text-lg ${
-                    plStatement.netProfit >= 0 ? 'text-green-700' : 'text-red-700'
-                  }`}>
+                  <td className={`px-6 py-4 text-right font-bold text-lg ${plStatement.netProfit >= 0 ? 'text-green-700' : 'text-red-700'
+                    }`}>
                     {plStatement.netProfit >= 0 ? '+' : ''}{formatCurrency(plStatement.netProfit)}
                   </td>
                 </tr>

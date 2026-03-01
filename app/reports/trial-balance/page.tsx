@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { exportToCSV, formatCurrencyForCSV } from '@/lib/csvExport';
+import { formatINR } from '@/lib/currency';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -45,7 +46,7 @@ export default function TrialBalancePage() {
       acc.closingBalance.toFixed(2),
       acc.type
     ]);
-    
+
     rows.push([]);
     rows.push(['TOTALS', data.totalDebit.toFixed(2), data.totalCredit.toFixed(2), '', '']);
 
@@ -56,7 +57,7 @@ export default function TrialBalancePage() {
     });
   };
 
-  const formatCurrency = (amt: number) => `₹${amt.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const formatCurrency = formatINR;
 
   if (loading) return <div className="p-8 text-center">Generating Trial Balance...</div>;
 

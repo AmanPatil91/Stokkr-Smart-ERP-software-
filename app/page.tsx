@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { formatINR } from '@/lib/currency';
 
 export default function HomePage() {
   const router = useRouter();
@@ -14,7 +15,7 @@ export default function HomePage() {
     }
   }, [router]);
 
-  const [chatHistory, setChatHistory] = useState<{role: 'user' | 'ai', content: string}[]>([]);
+  const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'ai', content: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [question, setQuestion] = useState('');
   const [mounted, setMounted] = useState(false);
@@ -23,9 +24,11 @@ export default function HomePage() {
     setMounted(true);
   }, []);
 
+  const formatCurrency = formatINR;
+
   const askAI = async (q: string) => {
     if (!q.trim()) return;
-    
+
     const userMessage = { role: 'user' as const, content: q };
     setChatHistory(prev => [...prev, userMessage]);
     setQuestion('');
@@ -38,10 +41,10 @@ export default function HomePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: q })
       });
-      
+
       const data = await res.json();
       console.log('HomePage: AI Response received', data);
-      
+
       const reply = data.reply || data.insight || 'I received an unexpected response format.';
       setChatHistory(prev => [...prev, { role: 'ai' as const, content: reply }]);
     } catch (err) {
@@ -116,11 +119,10 @@ export default function HomePage() {
                         {chatHistory.map((msg, i) => (
                           <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                             <div
-                              className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm ${
-                                msg.role === 'user'
-                                  ? 'bg-indigo-600 text-white rounded-tr-none'
-                                  : 'bg-white text-gray-700 border border-gray-200 rounded-tl-none shadow-sm'
-                              }`}
+                              className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm ${msg.role === 'user'
+                                ? 'bg-indigo-600 text-white rounded-tr-none'
+                                : 'bg-white text-gray-700 border border-gray-200 rounded-tl-none shadow-sm'
+                                }`}
                             >
                               {msg.content}
                             </div>

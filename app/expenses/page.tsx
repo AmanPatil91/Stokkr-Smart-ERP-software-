@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { exportToCSV, formatDateForCSV, formatCurrencyForCSV } from '@/lib/csvExport';
+import { formatINR } from '@/lib/currency';
 
 type Expense = {
   id: string;
@@ -170,29 +171,24 @@ export default function ExpenseTracking() {
     });
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-    }).format(amount);
-  };
+  const formatCurrency = formatINR;
 
   // Filter and search logic - combines all filters and searches
   const getFilteredExpenses = () => {
     return expenses.filter(exp => {
       // Search: case-insensitive description (title) or reference number
       const searchLower = searchTerm.toLowerCase();
-      const matchesSearch = searchTerm === '' || 
+      const matchesSearch = searchTerm === '' ||
         exp.title.toLowerCase().includes(searchLower) ||
         (exp.referenceNumber && exp.referenceNumber.toLowerCase().includes(searchLower));
-      
+
       // Filter: category
       const matchesCategory = filterCategory === '' || exp.category === filterCategory;
-      
+
       // Filter: month (YYYY-MM format)
       const expenseMonth = exp.expenseDate.substring(0, 7); // Get YYYY-MM
       const matchesMonth = filterMonth === '' || expenseMonth === filterMonth;
-      
+
       return matchesSearch && matchesCategory && matchesMonth;
     });
   };
@@ -390,7 +386,7 @@ export default function ExpenseTracking() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            
+
             {/* Filter by category */}
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-2">Category</label>
@@ -405,7 +401,7 @@ export default function ExpenseTracking() {
                 ))}
               </select>
             </div>
-            
+
             {/* Filter by month */}
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-2">Month</label>

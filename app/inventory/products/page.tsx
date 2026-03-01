@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { exportToCSV, formatDateForCSV, formatCurrencyForCSV } from '@/lib/csvExport';
+import { exportToCSV, formatDateForCSV } from '@/lib/csvExport';
+import { formatINR } from '@/lib/currency';
 
 type Product = {
   id: string;
@@ -177,6 +178,8 @@ export default function InventoryProductsPage() {
     const filename = `Inventory_${new Date().toISOString().split('T')[0]}`;
     exportToCSV({ filename, headers, rows });
   };
+
+  const formatCurrency = formatINR;
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);

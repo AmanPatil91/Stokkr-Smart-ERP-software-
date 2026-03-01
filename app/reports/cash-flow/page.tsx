@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { exportToCSV, formatCurrencyForCSV } from '@/lib/csvExport';
+import { formatINR } from '@/lib/currency';
 
 type CashFlowData = {
   month: number;
@@ -92,14 +93,7 @@ export default function CashFlowPage() {
     });
   };
 
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
+  const formatCurrency = formatINR;
 
   const years = Array.from({ length: 10 }, (_, i) => 2020 + i);
 
@@ -229,11 +223,10 @@ export default function CashFlowPage() {
                 <span className="font-bold text-gray-800">
                   Net Operating Cash Flow
                 </span>
-                <span className={`font-bold text-lg ${
-                  cashFlowData.operatingActivities.netOperatingCashFlow >= 0
+                <span className={`font-bold text-lg ${cashFlowData.operatingActivities.netOperatingCashFlow >= 0
                     ? 'text-green-600'
                     : 'text-red-600'
-                }`}>
+                  }`}>
                   ₹{formatCurrency(cashFlowData.operatingActivities.netOperatingCashFlow).slice(1)}
                 </span>
               </div>
@@ -274,11 +267,10 @@ export default function CashFlowPage() {
                 <span className="font-bold text-gray-800">
                   Net Financing Cash Flow
                 </span>
-                <span className={`font-bold text-lg ${
-                  cashFlowData.financingActivities.netFinancingCashFlow >= 0
+                <span className={`font-bold text-lg ${cashFlowData.financingActivities.netFinancingCashFlow >= 0
                     ? 'text-green-600'
                     : 'text-red-600'
-                }`}>
+                  }`}>
                   ₹{formatCurrency(cashFlowData.financingActivities.netFinancingCashFlow).slice(1)}
                 </span>
               </div>
@@ -290,11 +282,10 @@ export default function CashFlowPage() {
                 <span className="text-xl font-bold text-gray-800">
                   NET CASH FLOW FOR THE MONTH
                 </span>
-                <span className={`text-3xl font-bold ${
-                  cashFlowData.netCashFlow >= 0
+                <span className={`text-3xl font-bold ${cashFlowData.netCashFlow >= 0
                     ? 'text-green-600'
                     : 'text-red-600'
-                }`}>
+                  }`}>
                   ₹{formatCurrency(cashFlowData.netCashFlow).slice(1)}
                 </span>
               </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { exportToCSV, formatCurrencyForCSV } from '@/lib/csvExport';
+import { formatINR } from '@/lib/currency';
 
 type AgingRecord = {
   id: string;
@@ -62,21 +63,21 @@ export default function CreditRiskPage() {
     if (type === 'receivables') {
       headers = ['Customer', 'Date', 'Invoice #', 'Amount', 'Days Overdue', 'Bucket', 'Status'];
       rows = data.receivablesAging.map(r => [
-        r.customer, new Date(r.date).toLocaleDateString(), r.reference, 
+        r.customer, new Date(r.date).toLocaleDateString(), r.reference,
         formatCurrencyForCSV(r.amount), r.days, r.bucket, r.status
       ]);
       filename = 'Receivables-Aging';
     } else if (type === 'payables') {
       headers = ['Supplier', 'Date', 'Batch #', 'Amount', 'Days Overdue', 'Bucket', 'Status'];
       rows = data.payablesAging.map(r => [
-        r.supplier, new Date(r.date).toLocaleDateString(), r.reference, 
+        r.supplier, new Date(r.date).toLocaleDateString(), r.reference,
         formatCurrencyForCSV(r.amount), r.days, r.bucket, r.status
       ]);
       filename = 'Payables-Aging';
     } else {
       headers = ['Customer', 'Outstanding Exposure', 'Advisory Limit', 'Status'];
       rows = data.customerExposure.map(c => [
-        c.name, formatCurrencyForCSV(c.outstanding), 
+        c.name, formatCurrencyForCSV(c.outstanding),
         customerLimits[c.id] || 0,
         (customerLimits[c.id] && c.outstanding > customerLimits[c.id]) ? 'EXCEEDED' : 'OK'
       ]);
@@ -94,12 +95,7 @@ export default function CreditRiskPage() {
     }
   };
 
-  const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-    }).format(amount);
-  };
+  const formatCurrency = formatINR;
 
   if (loading) return <div className="p-8 text-center text-gray-600">Loading risk metrics...</div>;
 
@@ -200,28 +196,28 @@ export default function CreditRiskPage() {
               {data?.customerExposure.map(c => {
                 const limit = customerLimits[c.id] || 0;
                 const exceeded = limit > 0 && c.outstanding > limit;
-                
+
                 return (
                   <div key={c.id} className={`p-4 rounded-lg border-2 transition-colors ${exceeded ? 'border-red-300 bg-red-50' : 'border-gray-100 bg-gray-50'}`}>
                     <div className="flex justify-between items-start mb-4">
                       <h3 className="font-bold text-gray-900">{c.name}</h3>
                       {exceeded && <span className="text-[10px] bg-red-600 text-white px-1.5 py-0.5 rounded font-bold uppercase">Limit Exceeded</span>}
                     </div>
-                    
+
                     <div className="space-y-3">
                       <div>
                         <p className="text-xs text-gray-500 uppercase font-semibold">Outstanding</p>
                         <p className={`text-xl font-bold ${exceeded ? 'text-red-600' : 'text-gray-900'}`}>{formatCurrency(c.outstanding)}</p>
                       </div>
-                      
+
                       <div>
                         <label className="text-xs text-gray-500 uppercase font-semibold block mb-1">Advisory Credit Limit (UI-only)</label>
                         <div className="flex gap-2">
-                          <input 
-                            type="number" 
+                          <input
+                            type="number"
                             placeholder="Set limit..."
                             value={customerLimits[c.id] || ''}
-                            onChange={(e) => setCustomerLimits({...customerLimits, [c.id]: parseFloat(e.target.value) || 0})}
+                            onChange={(e) => setCustomerLimits({ ...customerLimits, [c.id]: parseFloat(e.target.value) || 0 })}
                             className="w-full px-2 py-1 text-sm border rounded focus:ring-1 focus:ring-blue-500 focus:outline-none"
                           />
                         </div>
@@ -229,8 +225,8 @@ export default function CreditRiskPage() {
 
                       {limit > 0 && (
                         <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
-                          <div 
-                            className={`h-1.5 rounded-full ${exceeded ? 'bg-red-600' : 'bg-blue-600'}`} 
+                          <div
+                            className={`h-1.5 rounded-full ${exceeded ? 'bg-red-600' : 'bg-blue-600'}`}
                             style={{ width: `${Math.min((c.outstanding / limit) * 100, 100)}%` }}
                           ></div>
                         </div>

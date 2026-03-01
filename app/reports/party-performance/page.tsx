@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { exportToCSV, formatCurrencyForCSV } from '@/lib/csvExport';
+import { formatINR } from '@/lib/currency';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -22,6 +23,7 @@ export default function PartyPerformancePage() {
     fetchData();
   }, [selectedMonth, selectedYear, partyType]);
 
+  const formatCurrency = formatINR;
   const fetchData = async () => {
     try {
       setLoading(true);

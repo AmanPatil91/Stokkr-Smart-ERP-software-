@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-
 type Party = {
   id: string;
   name: string;
@@ -13,6 +12,8 @@ type Product = {
   sku: string;
   price: number;
 };
+
+import { formatINR } from '@/lib/currency';
 
 export default function NewSalesInvoice() {
   const [parties, setParties] = useState<Party[]>([]);
@@ -78,8 +79,8 @@ export default function NewSalesInvoice() {
     const newQuantity = field === 'quantity' ? parseInt(value) : newItems[index].quantity;
     const newPrice = field === 'pricePerItem' ? parseFloat(value) : newItems[index].pricePerItem;
 
-    newItems[index] = { 
-      ...newItems[index], 
+    newItems[index] = {
+      ...newItems[index],
       [field]: field === 'quantity' ? newQuantity : newPrice,
       total: (newQuantity || 0) * (newPrice || 0)
     };
@@ -121,7 +122,7 @@ export default function NewSalesInvoice() {
       setLoading(false);
     }
   };
-  
+
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-4xl mx-auto">
@@ -203,7 +204,7 @@ export default function NewSalesInvoice() {
                     <div>
                       <label className="block text-gray-900 font-semibold mb-2">Total</label>
                       <div className="px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 font-semibold text-gray-900">
-                        ${item.total.toFixed(2)}
+                        {formatINR(item.total)}
                       </div>
                     </div>
                   </div>

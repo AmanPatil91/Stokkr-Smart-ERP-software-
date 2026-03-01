@@ -28,8 +28,8 @@ export default function AccountsReceivablePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editAmount, setEditAmount] = useState<number>(0);
-  
+  const [editAmount, setEditAmount] = useState<number | string>('');
+
   // Search and Filter State
   const [searchTerm, setSearchTerm] = useState(''); // Search: invoice number, customer name
   const [filterCustomer, setFilterCustomer] = useState(''); // Filter: customer
@@ -55,10 +55,16 @@ export default function AccountsReceivablePage() {
 
   const handleEditPayment = async (id: string) => {
     try {
+      const parsedAmount = Number(editAmount);
+      if (isNaN(parsedAmount) || parsedAmount < 0) {
+        alert('Please enter a valid non-negative amount');
+        return;
+      }
+
       const response = await fetch(`/api/accounts-receivable/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ receivableAmount: editAmount }),
+        body: JSON.stringify({ receivableAmount: parsedAmount }),
       });
 
       if (!response.ok) throw new Error('Failed to update');
@@ -77,23 +83,23 @@ export default function AccountsReceivablePage() {
     return receivables.filter(rec => {
       // Search: case-insensitive invoice number or customer name
       const searchLower = searchTerm.toLowerCase();
-      const matchesSearch = searchTerm === '' || 
+      const matchesSearch = searchTerm === '' ||
         rec.invoice.invoiceNumber.toLowerCase().includes(searchLower) ||
         rec.invoice.party.name.toLowerCase().includes(searchLower);
-      
+
       // Filter: customer (exact match on party name)
-      const matchesCustomer = filterCustomer === '' || 
+      const matchesCustomer = filterCustomer === '' ||
         rec.invoice.party.name === filterCustomer;
-      
+
       // Filter: payment status
-      const matchesPaymentStatus = filterPaymentStatus === '' || 
+      const matchesPaymentStatus = filterPaymentStatus === '' ||
         rec.paymentStatus === filterPaymentStatus;
-      
+
       // Filter: date range
       const invoiceDate = new Date(rec.invoice.date);
       const matchesDateFrom = filterDateFrom === '' || invoiceDate >= new Date(filterDateFrom);
       const matchesDateTo = filterDateTo === '' || invoiceDate <= new Date(filterDateTo);
-      
+
       // All filters must pass
       return matchesSearch && matchesCustomer && matchesPaymentStatus && matchesDateFrom && matchesDateTo;
     });
@@ -179,7 +185,7 @@ export default function AccountsReceivablePage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            
+
             {/* Filter by customer */}
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-2">Customer</label>
@@ -194,7 +200,7 @@ export default function AccountsReceivablePage() {
                 ))}
               </select>
             </div>
-            
+
             {/* Filter by payment status */}
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-2">Status</label>
@@ -208,7 +214,7 @@ export default function AccountsReceivablePage() {
                 <option value="COMPLETED">Completed</option>
               </select>
             </div>
-            
+
             {/* Filter by date range - from */}
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-2">Date From</label>
@@ -219,7 +225,7 @@ export default function AccountsReceivablePage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            
+
             {/* Filter by date range - to */}
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-2">Date To</label>
@@ -281,7 +287,7 @@ export default function AccountsReceivablePage() {
                           type="number"
                           className="w-24 px-2 py-1 border border-blue-300 rounded"
                           value={editAmount}
-                          onChange={(e) => setEditAmount(parseFloat(e.target.value))}
+                          onChange={(e) => setEditAmount(e.target.value)}
                           step="0.01"
                         />
                       ) : (
@@ -289,11 +295,10 @@ export default function AccountsReceivablePage() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-sm">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        receivable.paymentStatus === 'COMPLETED'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-blue-100 text-blue-800'
-                      }`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${receivable.paymentStatus === 'COMPLETED'
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-blue-100 text-blue-800'
+                        }`}>
                         {receivable.paymentStatus}
                       </span>
                     </td>
