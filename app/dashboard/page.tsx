@@ -70,6 +70,26 @@ type TurnoverData = {
   };
 };
 
+type ReorderRecommendation = {
+  id: string;
+  name: string;
+  sku: string;
+  currentStock: number;
+  averageDailySales: number;
+  leadTimeDemand: number;
+  suggestedReorderQuantity: number;
+  priorityStatus: 'Critical' | 'Moderate' | 'Safe';
+};
+
+type ReorderData = {
+  summary: {
+    totalNeedsReorder: number;
+    periodDays: number;
+    leadTimeDays: number;
+  };
+  recommendations: ReorderRecommendation[];
+};
+
 export default function DashboardPage() {
   const [salesData, setSalesData] = useState<SalesSummary | null>(null);
   const [stockData, setStockData] = useState<StockItem[] | null>(null);
@@ -78,6 +98,7 @@ export default function DashboardPage() {
   const [monthlyPL, setMonthlyPL] = useState<MonthlyPL | null>(null);
   const [financialHealth, setFinancialHealth] = useState<FinancialHealth | null>(null);
   const [turnoverData, setTurnoverData] = useState<TurnoverData | null>(null);
+  const [reorderData, setReorderData] = useState<ReorderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -102,15 +123,16 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [salesResponse, stockResponse, alertsResponse, plResponse, turnoverResponse] = await Promise.all([
+        const [salesResponse, stockResponse, alertsResponse, plResponse, turnoverResponse, reorderResponse] = await Promise.all([
           fetch('/api/reports/sales-summary'),
           fetch('/api/reports/stock-summary'),
           fetch('/api/alerts'),
           fetch('/api/reports/monthly-pl'),
           fetch('/api/inventory-turnover'),
+          fetch('/api/inventory-reorder'),
         ]);
 
-        if (!salesResponse.ok || !stockResponse.ok || !alertsResponse.ok || !plResponse.ok || !turnoverResponse.ok) {
+        if (!salesResponse.ok || !stockResponse.ok || !alertsResponse.ok || !plResponse.ok || !turnoverResponse.ok || !reorderResponse.ok) {
           throw new Error('Failed to fetch dashboard data.');
         }
 
@@ -119,6 +141,7 @@ export default function DashboardPage() {
         const alerts = await alertsResponse.json();
         const pl = await plResponse.json();
         const turnover = await turnoverResponse.json();
+        const reorders = await reorderResponse.json();
 
         const formatCurrency = formatINR;
         const formattedSales = {
@@ -131,6 +154,7 @@ export default function DashboardPage() {
         setLowStockProducts(alerts.lowStockProducts || []);
         setMonthlyPL(pl);
         setTurnoverData(turnover);
+        setReorderData(reorders);
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -499,6 +523,74 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* Reorder Recommendations */}
+        {reorderData && reorderData.recommendations.length > 0 && (
+          <div className="bg-white rounded-lg shadow-sm border border-blue-200 p-6 mb-8 mt-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -z-10 opacity-50"></div>
+
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <span className="text-2xl">🛒</span> Intelligent Reorder Recommendations
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">Based on 15-day supplier lead time and {reorderData.summary.periodDays}-day sales history</p>
+              </div>
+              <div className="mt-4 sm:mt-0 flex items-center bg-blue-50 rounded-lg p-3 border border-blue-100">
+                <div className="mr-4">
+                  <p className="text-xs text-blue-600 font-medium uppercase tracking-wider">Items to Order</p>
+                  <p className="text-2xl font-bold text-blue-700">{reorderData.summary.totalNeedsReorder}</p>
+                </div>
+                <div className="px-3 py-1.5 rounded-md text-xs font-bold bg-blue-100 text-blue-800">
+                  Total Need
+                </div>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left border border-gray-100 rounded-lg">
+                <thead className="bg-gray-50 text-gray-700 text-xs uppercase border-b border-gray-200">
+                  <tr>
+                    <th className="px-4 py-3">Product / SKU</th>
+                    <th className="px-3 py-3 text-right">Avg Daily Sales</th>
+                    <th className="px-3 py-3 text-right">15-Day Demand</th>
+                    <th className="px-3 py-3 text-right">Current Stock</th>
+                    <th className="px-3 py-3 text-right">Suggested Order</th>
+                    <th className="px-4 py-3 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {reorderData.recommendations.map(item => (
+                    <tr key={item.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-4">
+                        <p className="font-medium text-gray-900 truncate max-w-[200px]">{item.name}</p>
+                        <p className="text-xs text-gray-500">{item.sku}</p>
+                      </td>
+                      <td className="px-3 py-4 text-right">{item.averageDailySales} / day</td>
+                      <td className="px-3 py-4 text-right text-gray-600">{item.leadTimeDemand} req.</td>
+                      <td className="px-3 py-4 text-right font-semibold text-gray-800">{item.currentStock}</td>
+                      <td className="px-3 py-4 text-right relative">
+                        <span className="inline-block bg-blue-100 text-blue-800 font-bold px-3 py-1 rounded-md border border-blue-200">
+                          +{item.suggestedReorderQuantity}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 text-center">
+                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${item.priorityStatus === 'Critical'
+                          ? 'bg-red-100 text-red-700 border border-red-200'
+                          : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                          }`}>
+                          {item.priorityStatus.toUpperCase()}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <p className="text-xs text-gray-500 mt-4 text-right italic">* Recommended quantity includes a 10% safety buffer to prevent stockouts.</p>
           </div>
         )}
 

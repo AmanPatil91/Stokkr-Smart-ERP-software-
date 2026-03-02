@@ -57,6 +57,14 @@ model Product {
   name              String
   sku               String             @unique
   description       String?
+  brand             String?
+  mrp               Decimal?           @db.Decimal(10, 2)
+  hsnCode           String?
+  category          String?
+  gstRate           Decimal?           @db.Decimal(5, 2)
+  cgstRate          Decimal?           @db.Decimal(5, 2)
+  sgstRate          Decimal?           @db.Decimal(5, 2)
+  igstRate          Decimal?           @db.Decimal(5, 2)
   price             Decimal            @db.Decimal(10, 2)
   cost              Decimal            @db.Decimal(10, 2)
   expiryAlertDays   Int                @default(7)
@@ -107,6 +115,10 @@ model Invoice {
   invoiceType        String
   date               DateTime            @default(now())
   totalAmount        Decimal             @db.Decimal(10, 2)
+  subTotalAmount     Decimal             @default(0) @db.Decimal(10, 2)
+  taxAmount          Decimal             @default(0) @db.Decimal(10, 2)
+  isInterState       Boolean             @default(false)
+  paymentMode        String              @default("CASH")
   partyId            String
   accountsReceivable AccountsReceivable?
   party              Party               @relation(fields: [partyId], references: [id])
@@ -120,6 +132,11 @@ model InvoiceItem {
   quantity     Int
   pricePerItem Decimal  @db.Decimal(10, 2)
   subtotal     Decimal  @db.Decimal(10, 2)
+  gstRate      Decimal? @db.Decimal(5, 2)
+  cgstAmount   Decimal? @db.Decimal(10, 2)
+  sgstAmount   Decimal? @db.Decimal(10, 2)
+  igstAmount   Decimal? @db.Decimal(10, 2)
+  taxAmount    Decimal? @db.Decimal(10, 2)
   cogsPerItem  Decimal? @db.Decimal(10, 2)
   cogsTotal    Decimal? @db.Decimal(10, 2)
   invoice      Invoice  @relation(fields: [invoiceId], references: [id])
@@ -133,6 +150,9 @@ model LedgerTransaction {
   amount          Decimal  @db.Decimal(10, 2)
   date            DateTime @default(now())
   description     String
+  paymentMode     String?
+  referenceNumber String?
+  invoiceId       String?
   party           Party    @relation(fields: [partyId], references: [id])
 }
 
@@ -169,4 +189,51 @@ model AccountsReceivable {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
   invoice          Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+}
+
+model SalesTransaction {
+  id            String   @id @default(cuid())
+  date          DateTime?
+  partyName     String
+  productName   String
+  brand         String?
+  invoiceNumber String?
+  quantity      Decimal  @default(0) @db.Decimal(10, 2)
+  rate          Decimal  @default(0) @db.Decimal(10, 2)
+  amount        Decimal  @default(0) @db.Decimal(10, 2)
+  gstRate       Decimal? @db.Decimal(5, 2)
+  taxAmount     Decimal? @db.Decimal(10, 2)
+  mrp           Decimal? @db.Decimal(10, 2)
+  mrpAmount     Decimal? @db.Decimal(10, 2)
+  hsnCode       String?
+  route         String?
+  area          String?
+  saleType      String?
+  gstNumber     String?
+  createdAt     DateTime @default(now())
+
+  @@unique([date, partyName, productName, amount], name: "sales_dedup")
+}
+
+model PurchaseTransaction {
+  id            String   @id @default(cuid())
+  date          DateTime?
+  supplierName  String
+  productName   String
+  brand         String?
+  invoiceNumber String?
+  quantity      Decimal  @default(0) @db.Decimal(10, 2)
+  rate          Decimal  @default(0) @db.Decimal(10, 2)
+  amount        Decimal  @default(0) @db.Decimal(10, 2)
+  gstRate       Decimal? @db.Decimal(5, 2)
+  taxAmount     Decimal? @db.Decimal(10, 2)
+  mrp           Decimal? @db.Decimal(10, 2)
+  mrpAmount     Decimal? @db.Decimal(10, 2)
+  hsnCode       String?
+  route         String?
+  area          String?
+  gstNumber     String?
+  createdAt     DateTime @default(now())
+
+  @@unique([date, supplierName, productName, amount], name: "purchase_dedup")
 }

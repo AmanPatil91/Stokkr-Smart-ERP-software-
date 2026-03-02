@@ -62,6 +62,7 @@ export default function HomePage() {
     { href: '/accounts-receivable', label: 'Accounts Receivable', icon: '💰', desc: 'Customer Payments' },
     { href: '/accounts-payable', label: 'Accounts Payable', icon: '💳', desc: 'Supplier Payments' },
     { href: '/expenses', label: 'Track Expenses', icon: '💸', desc: 'Expense Management' },
+    { href: '/import', label: 'Data Import', icon: '📥', desc: 'Upload Sales/Purchase data' },
     { href: '/dashboard', label: 'View Dashboard', icon: '📊', desc: 'Analytics' },
   ];
 

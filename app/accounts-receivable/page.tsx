@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { exportToCSV, formatDateForCSV, formatCurrencyForCSV } from '@/lib/csvExport';
 
 type AccountReceivable = {
@@ -27,8 +27,18 @@ export default function AccountsReceivablePage() {
   const [receivables, setReceivables] = useState<AccountReceivable[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editAmount, setEditAmount] = useState<number | string>('');
+  // Payment Modal State
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedReceivable, setSelectedReceivable] = useState<AccountReceivable | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState<number | string>('');
+  const [paymentMode, setPaymentMode] = useState('CASH');
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [referenceNumber, setReferenceNumber] = useState('');
+  const [notes, setNotes] = useState('');
+
+  // History State
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [historyData, setHistoryData] = useState<Record<string, any[]>>({});
 
   // Search and Filter State
   const [searchTerm, setSearchTerm] = useState(''); // Search: invoice number, customer name
@@ -53,28 +63,79 @@ export default function AccountsReceivablePage() {
     fetchReceivables();
   }, []);
 
-  const handleEditPayment = async (id: string) => {
+  const openPaymentModal = (receivable: AccountReceivable) => {
+    setSelectedReceivable(receivable);
+    setPaymentAmount(receivable.receivableAmount);
+    setPaymentMode('CASH');
+    setPaymentDate(new Date().toISOString().split('T')[0]);
+    setReferenceNumber('');
+    setNotes('');
+    setIsPaymentModalOpen(true);
+  };
+
+  const handleRecordPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedReceivable) return;
+
     try {
-      const parsedAmount = Number(editAmount);
-      if (isNaN(parsedAmount) || parsedAmount < 0) {
-        alert('Please enter a valid non-negative amount');
+      const parsedAmount = Number(paymentAmount);
+      if (isNaN(parsedAmount) || parsedAmount <= 0) {
+        alert('Please enter a valid positive payment amount');
+        return;
+      }
+      if (parsedAmount > Number(selectedReceivable.receivableAmount)) {
+        alert('Payment amount cannot exceed remaining balance');
         return;
       }
 
-      const response = await fetch(`/api/accounts-receivable/${id}`, {
+      const response = await fetch(`/api/accounts-receivable/${selectedReceivable.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ receivableAmount: parsedAmount }),
+        body: JSON.stringify({
+          paymentAmount: parsedAmount,
+          paymentMode,
+          paymentDate,
+          referenceNumber,
+          notes
+        }),
       });
 
-      if (!response.ok) throw new Error('Failed to update');
+      if (!response.ok) throw new Error('Failed to record payment');
       const updated = await response.json();
 
-      setReceivables(receivables.map(r => r.id === id ? updated : r));
-      setEditingId(null);
-      alert('Payment updated successfully!');
+      setReceivables(receivables.map(r => r.id === selectedReceivable.id ? { ...r, receivableAmount: updated.receivableAmount, paymentStatus: updated.paymentStatus } : r));
+
+      // Clear history data uniquely to fetch it freshly next time opened
+      setHistoryData(prev => {
+        const newData = { ...prev };
+        delete newData[selectedReceivable.id];
+        return newData;
+      });
+
+      setIsPaymentModalOpen(false);
+      alert('Payment recorded successfully!');
     } catch (err: any) {
-      setError(err.message);
+      alert(err.message);
+    }
+  };
+
+  const toggleHistory = async (id: string) => {
+    if (expandedId === id) {
+      setExpandedId(null);
+      return;
+    }
+
+    setExpandedId(id);
+    if (!historyData[id]) {
+      try {
+        const res = await fetch(`/api/accounts-receivable/${id}`);
+        if (res.ok) {
+          const data = await res.json();
+          setHistoryData(prev => ({ ...prev, [id]: data.payments || [] }));
+        }
+      } catch (e) {
+        console.error(e);
+      }
     }
   };
 
@@ -267,70 +328,92 @@ export default function AccountsReceivablePage() {
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Customer</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Date</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Total Amount</th>
-                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Receivable Amount</th>
+                  <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Remaining Balance</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
                   <th className="px-6 py-3 text-left text-sm font-semibold text-gray-900">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
                 {getFilteredReceivables().map(receivable => (
-                  <tr key={receivable.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm text-gray-900 font-medium">{receivable.invoice.invoiceNumber}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{receivable.invoice.party.name}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">
-                      {new Date(receivable.invoice.date).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-900 font-semibold">₹{Number(receivable.totalAmount).toFixed(2)}</td>
-                    <td className="px-6 py-4 text-sm">
-                      {editingId === receivable.id ? (
-                        <input
-                          type="number"
-                          className="w-24 px-2 py-1 border border-blue-300 rounded"
-                          value={editAmount}
-                          onChange={(e) => setEditAmount(e.target.value)}
-                          step="0.01"
-                        />
-                      ) : (
-                        <span className="text-gray-900 font-semibold">₹{Number(receivable.receivableAmount).toFixed(2)}</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-sm">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${receivable.paymentStatus === 'COMPLETED'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-blue-100 text-blue-800'
-                        }`}>
-                        {receivable.paymentStatus}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm">
-                      {editingId === receivable.id ? (
-                        <div className="space-x-2">
+                  <React.Fragment key={receivable.id}>
+                    <tr className="hover:bg-gray-50">
+                      <td className="px-6 py-4 text-sm text-gray-900 font-medium">{receivable.invoice.invoiceNumber}</td>
+                      <td className="px-6 py-4 text-sm text-gray-700">{receivable.invoice.party.name}</td>
+                      <td className="px-6 py-4 text-sm text-gray-700">
+                        {new Date(receivable.invoice.date).toLocaleDateString()}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900 font-semibold">₹{Number(receivable.totalAmount).toFixed(2)}</td>
+                      <td className="px-6 py-4 text-sm font-bold text-gray-900">₹{Number(receivable.receivableAmount).toFixed(2)}</td>
+                      <td className="px-6 py-4 text-sm">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${receivable.paymentStatus === 'COMPLETED'
+                          ? 'bg-green-100 text-green-800'
+                          : receivable.paymentStatus === 'PARTIAL'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-blue-100 text-blue-800'
+                          }`}>
+                          {receivable.paymentStatus}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm">
+                        <div className="flex gap-2">
                           <button
-                            onClick={() => handleEditPayment(receivable.id)}
-                            className="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+                            onClick={() => openPaymentModal(receivable)}
+                            disabled={receivable.paymentStatus === 'COMPLETED'}
+                            className={`px-3 py-1 rounded text-white font-medium ${receivable.paymentStatus === 'COMPLETED' ? 'bg-gray-300 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 shadow-sm'}`}
                           >
-                            Save
+                            Pay
                           </button>
                           <button
-                            onClick={() => setEditingId(null)}
-                            className="bg-gray-400 text-white px-3 py-1 rounded hover:bg-gray-500"
+                            onClick={() => toggleHistory(receivable.id)}
+                            className={`px-3 py-1 rounded font-medium border ${expandedId === receivable.id ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50 shadow-sm'}`}
                           >
-                            Cancel
+                            {expandedId === receivable.id ? 'Hide' : 'History'}
                           </button>
                         </div>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            setEditingId(receivable.id);
-                            setEditAmount(Number(receivable.receivableAmount));
-                          }}
-                          className="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
-                        >
-                          Edit
-                        </button>
-                      )}
-                    </td>
-                  </tr>
+                      </td>
+                    </tr>
+                    {expandedId === receivable.id && (
+                      <tr className="bg-indigo-50/50">
+                        <td colSpan={7} className="px-6 py-4 border-b border-indigo-100">
+                          <div className="bg-white p-4 rounded-lg border border-indigo-100 shadow-sm">
+                            <h4 className="font-semibold text-indigo-900 mb-3 text-sm flex items-center gap-2">
+                              <span className="text-lg">📜</span> Payment History Log
+                            </h4>
+                            {!historyData[receivable.id] ? (
+                              <div className="text-gray-500 text-sm py-2">Loading transactions...</div>
+                            ) : historyData[receivable.id].length === 0 ? (
+                              <div className="text-gray-500 text-sm italic py-2">No payments dynamically recorded yet.</div>
+                            ) : (
+                              <table className="w-full text-sm text-left border">
+                                <thead className="bg-gray-50 text-gray-600 border-b">
+                                  <tr>
+                                    <th className="px-4 py-3 font-medium">Date</th>
+                                    <th className="px-4 py-3 font-medium">Amount Received</th>
+                                    <th className="px-4 py-3 font-medium">Method</th>
+                                    <th className="px-4 py-3 font-medium">Reference</th>
+                                    <th className="px-4 py-3 font-medium">Notes</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                  {historyData[receivable.id].map(payment => (
+                                    <tr key={payment.id} className="hover:bg-gray-50">
+                                      <td className="px-4 py-3 text-gray-600">{new Date(payment.date).toLocaleString()}</td>
+                                      <td className="px-4 py-3 font-bold text-green-600">+ ₹{Number(payment.amount).toFixed(2)}</td>
+                                      <td className="px-4 py-3">
+                                        <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-semibold">{payment.paymentMode || 'CASH'}</span>
+                                      </td>
+                                      <td className="px-4 py-3 text-gray-600">{payment.referenceNumber || '-'}</td>
+                                      <td className="px-4 py-3 text-gray-500 italic max-w-[200px] truncate">{payment.description || '-'}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
@@ -338,6 +421,65 @@ export default function AccountsReceivablePage() {
         )}
 
       </div>
-    </div>
+
+      {/* Payment Recording Modal */}
+      {
+        isPaymentModalOpen && selectedReceivable && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
+              <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 className="text-xl font-bold text-gray-900">Record Payment</h3>
+                <button onClick={() => setIsPaymentModalOpen(false)} className="text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+              </div>
+              <div className="p-6 overflow-y-auto flex-1">
+                <form id="paymentForm" onSubmit={handleRecordPayment} className="space-y-5">
+                  <div className="bg-blue-50 p-4 rounded-lg flex justify-between items-center border border-blue-100">
+                    <span className="text-sm font-semibold text-blue-900">Outstanding Balance:</span>
+                    <span className="text-2xl font-bold text-blue-700">₹{Number(selectedReceivable.receivableAmount).toFixed(2)}</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Payment Amount (₹)*</label>
+                      <input type="number" step="0.01" required value={paymentAmount} onChange={e => setPaymentAmount(e.target.value)} max={Number(selectedReceivable.receivableAmount)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Payment Date*</label>
+                      <input type="date" required value={paymentDate} onChange={e => setPaymentDate(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Payment Mode*</label>
+                      <select required value={paymentMode} onChange={e => setPaymentMode(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                        <option value="CASH">Cash</option>
+                        <option value="UPI">UPI</option>
+                        <option value="BANK">Bank Transfer</option>
+                        <option value="CHEQUE">Cheque</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Ref Num / UTR</label>
+                      <input type="text" value={referenceNumber} onChange={e => setReferenceNumber(e.target.value)} placeholder="e.g. TXN12345" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Notes</label>
+                    <textarea rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder="Optional payment notes..." className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"></textarea>
+                  </div>
+                </form>
+              </div>
+              <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50">
+                <button type="button" onClick={() => setIsPaymentModalOpen(false)} className="px-5 py-2 rounded-lg font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 shadow-sm transition-colors">Cancel</button>
+                <button type="submit" form="paymentForm" className="px-5 py-2 rounded-lg font-bold text-white bg-green-600 hover:bg-green-700 shadow-sm transition-colors">Save Payment</button>
+              </div>
+            </div>
+          </div>
+        )
+      }
+
+    </div >
   );
 }

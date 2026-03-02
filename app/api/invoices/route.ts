@@ -5,19 +5,52 @@ import { calculateFifoCogs, reduceBatchQuantities } from '@/lib/cogsCalculator';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { partyId, items, totalAmount: providedTotal } = body;
+    const { partyId, items, isInterState, paymentMode } = body;
 
-    const totalAmount = providedTotal || items.reduce(
-      (sum: number, item: any) => sum + item.quantity * item.pricePerItem,
-      0
-    );
+    // Fetch products to calculate proper tax rates
+    const productIds = items.map((i: any) => i.productId);
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds } }
+    });
+    const productMap = new Map(products.map((p: any) => [p.id, p]));
+
+    let calculatedSubTotal = 0;
+    let calculatedTaxAmount = 0;
 
     // Calculate COGS for each item using FIFO method
     const itemsWithCogs = await Promise.all(
       items.map(async (item: any) => {
         const cogsResult = await calculateFifoCogs(item.productId, item.quantity);
+
+        const subtotal = item.quantity * item.pricePerItem;
+        const product = productMap.get(item.productId);
+        const gstRate = product?.gstRate ? Number(product.gstRate) : 0;
+        const itemTaxAmount = (subtotal * gstRate) / 100;
+
+        let cgstAmount = 0;
+        let sgstAmount = 0;
+        let igstAmount = 0;
+
+        if (gstRate > 0) {
+          if (isInterState) {
+            igstAmount = itemTaxAmount;
+          } else {
+            cgstAmount = itemTaxAmount / 2;
+            sgstAmount = itemTaxAmount / 2;
+          }
+        }
+
+        calculatedSubTotal += subtotal;
+        calculatedTaxAmount += itemTaxAmount;
+
         return {
           ...item,
+          subtotal,
+          gstRate,
+          cgstAmount,
+          sgstAmount,
+          igstAmount,
+          taxAmount: itemTaxAmount,
           cogsPerItem: cogsResult.cogsPerItem,
           cogsTotal: cogsResult.cogsTotal,
           batchUsage: cogsResult.batchUsage,
@@ -28,13 +61,47 @@ export async function POST(request: Request) {
     // Total COGS for the invoice
     const totalCogs = itemsWithCogs.reduce((sum, item) => sum + item.cogsTotal, 0);
 
+    // --- STRICT INVENTORY VALIDATION ---
+    // Calculate the current available stock for each requested product using StockTransactions
+    const verificationProductIds = items.map((i: any) => i.productId);
+    const stockTransactions = await prisma.stockTransaction.findMany({
+      where: { productId: { in: verificationProductIds } },
+      select: { productId: true, quantity: true, transactionType: true }
+    });
+
+    const stockMap = new Map<string, number>();
+    stockTransactions.forEach(tx => {
+      const current = stockMap.get(tx.productId) || 0;
+      stockMap.set(tx.productId, tx.transactionType === 'IN' ? current + tx.quantity : current - tx.quantity);
+    });
+
+    // Verify all requested quantities against available stock
+    for (const item of items) {
+      const availableStock = stockMap.get(item.productId) || 0;
+      if (item.quantity > availableStock) {
+        // Fetch product name for a clearer error message
+        const product = await prisma.product.findUnique({ where: { id: item.productId } });
+        const productName = product?.name || 'Unknown Item';
+
+        return NextResponse.json(
+          { error: `Insufficient stock for ${productName}. Available: ${availableStock} units, Requested: ${item.quantity} units.` },
+          { status: 400 }
+        );
+      }
+    }
+    // --- END STRICT INVENTORY VALIDATION ---
+
     await prisma.$transaction(async (tx) => {
       const newInvoice = await tx.invoice.create({
         data: {
           invoiceNumber: `INV-${Date.now()}`,
           invoiceType: 'SALES',
           partyId: partyId,
-          totalAmount: totalAmount,
+          subTotalAmount: calculatedSubTotal,
+          taxAmount: calculatedTaxAmount,
+          totalAmount: calculatedSubTotal + calculatedTaxAmount,
+          isInterState: isInterState || false,
+          paymentMode: paymentMode || 'CASH',
         },
       });
 
@@ -45,7 +112,12 @@ export async function POST(request: Request) {
           productId: item.productId,
           quantity: item.quantity,
           pricePerItem: item.pricePerItem,
-          subtotal: item.quantity * item.pricePerItem,
+          subtotal: item.subtotal,
+          gstRate: item.gstRate,
+          cgstAmount: item.cgstAmount,
+          sgstAmount: item.sgstAmount,
+          igstAmount: item.igstAmount,
+          taxAmount: item.taxAmount,
           cogsPerItem: item.cogsPerItem,
           cogsTotal: item.cogsTotal,
         })),
@@ -69,20 +141,22 @@ export async function POST(request: Request) {
         data: {
           partyId: partyId,
           transactionType: 'DEBIT',
-          amount: totalAmount,
+          amount: calculatedSubTotal + calculatedTaxAmount,
           description: `Sales Invoice #${newInvoice.invoiceNumber}`,
         },
       });
 
-      // ACCOUNTS RECEIVABLE: Create AR record with full amount as default receivable
-      await tx.accountsReceivable.create({
-        data: {
-          invoiceId: newInvoice.id,
-          totalAmount: totalAmount,
-          receivableAmount: totalAmount, // Defaults to full amount
-          paymentStatus: 'PENDING', // Starts as PENDING since receivableAmount > 0
-        },
-      });
+      // ACCOUNTS RECEIVABLE: Create AR record ONLY if payment is not fully Cash upfront.
+      if (paymentMode && paymentMode !== 'CASH') {
+        await tx.accountsReceivable.create({
+          data: {
+            invoiceId: newInvoice.id,
+            totalAmount: calculatedSubTotal + calculatedTaxAmount,
+            receivableAmount: calculatedSubTotal + calculatedTaxAmount, // Outstanding
+            paymentStatus: 'PENDING',
+          },
+        });
+      }
     });
 
     return NextResponse.json({ message: 'Invoice created successfully' }, { status: 201 });

@@ -3,13 +3,22 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
-    const { name, sku, description, price, cost, expiryAlertDays, lowStockAlertQty } = await request.json();
+    const {
+      name, sku, description, hsnCode, category, gstRate, cgstRate, sgstRate, igstRate,
+      price, cost, expiryAlertDays, lowStockAlertQty
+    } = await request.json();
 
     const newProduct = await prisma.product.create({
       data: {
         name,
         sku,
         description,
+        hsnCode,
+        category,
+        gstRate,
+        cgstRate,
+        sgstRate,
+        igstRate,
         price,
         cost,
         expiryAlertDays: expiryAlertDays || 7,

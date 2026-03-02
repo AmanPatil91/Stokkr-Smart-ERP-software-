@@ -49,11 +49,11 @@ export async function GET(request: NextRequest) {
     const netProfitLoss = totalSales - totalExpenses;
 
     const receivables = await prisma.accountsReceivable.findMany({
-      where: { createdAt: { lte: endDate } },
+      where: { createdAt: { lte: endDate }, paymentStatus: { in: ['PENDING', 'PARTIAL'] } },
     });
 
     const payables = await prisma.accountsPayable.findMany({
-      where: { createdAt: { lte: endDate } },
+      where: { createdAt: { lte: endDate }, paymentStatus: { in: ['PENDING', 'PARTIAL'] } },
     });
 
     const totalReceivable = receivables.reduce(

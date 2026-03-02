@@ -28,7 +28,18 @@ export async function GET(
             )
         }
 
-        return NextResponse.json(receivable)
+        // Fetch related ledger transactions (payments)
+        const payments = await prisma.ledgerTransaction.findMany({
+            where: {
+                invoiceId: receivable.invoice.id,
+                transactionType: 'PAYMENT_RECEIVED'
+            },
+            orderBy: {
+                date: 'desc'
+            }
+        });
+
+        return NextResponse.json({ ...receivable, payments })
     } catch (error) {
         console.error('Failed to fetch accounts receivable:', error)
         return NextResponse.json(
@@ -38,7 +49,7 @@ export async function GET(
     }
 }
 
-// PATCH - Update receivable amount
+// PATCH - Process a payment
 export async function PATCH(
     request: Request,
     context: any
@@ -46,17 +57,18 @@ export async function PATCH(
     try {
         const id = context.params.id
         const body = await request.json()
-        const { receivableAmount } = body
+        const { paymentAmount, paymentMode, paymentDate, referenceNumber, notes } = body
 
-        if (typeof receivableAmount !== 'number' || receivableAmount < 0) {
+        if (typeof paymentAmount !== 'number' || paymentAmount <= 0) {
             return NextResponse.json(
-                { error: 'Receivable amount must be a non-negative number' },
+                { error: 'Payment amount must be a positive number' },
                 { status: 400 }
             )
         }
 
         const receivable = await prisma.accountsReceivable.findUnique({
             where: { id },
+            include: { invoice: true }
         })
 
         if (!receivable) {
@@ -66,29 +78,58 @@ export async function PATCH(
             )
         }
 
-        const paymentStatus = receivableAmount > 0 ? 'PENDING' : 'COMPLETED'
+        const currentReceivableAmount = Number(receivable.receivableAmount)
+        if (paymentAmount > currentReceivableAmount) {
+            return NextResponse.json(
+                { error: 'Payment amount cannot exceed remaining balance' },
+                { status: 400 }
+            )
+        }
 
-        const updated = await prisma.accountsReceivable.update({
-            where: { id },
-            data: {
-                receivableAmount,
-                paymentStatus,
-            },
-            include: {
-                invoice: {
-                    include: {
-                        party: true,
-                        items: true,
+        const newReceivableAmount = currentReceivableAmount - paymentAmount
+        let paymentStatus = 'PENDING'
+        if (newReceivableAmount === 0) {
+            paymentStatus = 'COMPLETED'
+        } else if (newReceivableAmount < Number(receivable.totalAmount)) {
+            paymentStatus = 'PARTIAL'
+        }
+
+        // Use Prisma transaction to ensure both operations succeed or fail together
+        const [updatedReceivable] = await prisma.$transaction([
+            prisma.accountsReceivable.update({
+                where: { id },
+                data: {
+                    receivableAmount: newReceivableAmount,
+                    paymentStatus,
+                },
+                include: {
+                    invoice: {
+                        include: {
+                            party: true,
+                            items: true,
+                        },
                     },
                 },
-            },
-        })
+            }),
+            prisma.ledgerTransaction.create({
+                data: {
+                    partyId: receivable.invoice.partyId,
+                    transactionType: 'PAYMENT_RECEIVED',
+                    amount: paymentAmount,
+                    date: paymentDate ? new Date(paymentDate) : new Date(),
+                    description: notes || `Payment received for Invoice #${receivable.invoice.invoiceNumber}`,
+                    paymentMode: paymentMode || 'CASH',
+                    referenceNumber: referenceNumber || null,
+                    invoiceId: receivable.invoice.id,
+                }
+            })
+        ])
 
-        return NextResponse.json(updated)
+        return NextResponse.json(updatedReceivable)
     } catch (error) {
-        console.error('Failed to update accounts receivable:', error)
+        console.error('Failed to process payment:', error)
         return NextResponse.json(
-            { error: 'Failed to update accounts receivable' },
+            { error: 'Failed to process payment' },
             { status: 500 }
         )
     }
