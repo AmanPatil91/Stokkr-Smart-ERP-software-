@@ -4,16 +4,18 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { formatINR } from '@/lib/currency';
+import { useAuth } from '@/app/providers/AuthProvider';
+import { RoleGuard } from '@/components/RoleGuard';
 
 export default function HomePage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
-    const token = localStorage.getItem('firebaseToken');
-    if (!token) {
+    if (!authLoading && !user) {
       router.replace('/login');
     }
-  }, [router]);
+  }, [user, authLoading, router]);
 
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'ai', content: string }[]>([]);
   const [loading, setLoading] = useState(false);
@@ -56,15 +58,19 @@ export default function HomePage() {
   };
 
   const modules = [
-    { href: '/parties', label: 'Manage Parties', icon: '👥', desc: 'Customers & Suppliers' },
-    { href: '/sales/new', label: 'Create Sales Invoice', icon: '📋', desc: 'New Invoice' },
-    { href: '/inventory', label: 'Manage Inventory', icon: '📦', desc: 'Stock & Products' },
-    { href: '/accounts-receivable', label: 'Accounts Receivable', icon: '💰', desc: 'Customer Payments' },
-    { href: '/accounts-payable', label: 'Accounts Payable', icon: '💳', desc: 'Supplier Payments' },
-    { href: '/expenses', label: 'Track Expenses', icon: '💸', desc: 'Expense Management' },
-    { href: '/import', label: 'Data Import', icon: '📥', desc: 'Upload Sales/Purchase data' },
-    { href: '/dashboard', label: 'View Dashboard', icon: '📊', desc: 'Analytics' },
+    { href: '/parties', label: 'Manage Parties', icon: '👥', desc: 'Customers & Suppliers', allowedRoles: ['admin', 'manager', 'sales'] },
+    { href: '/sales/new', label: 'Create Sales Invoice', icon: '📋', desc: 'New Invoice', allowedRoles: ['admin', 'sales'] },
+    { href: '/inventory', label: 'Manage Inventory', icon: '📦', desc: 'Stock & Products', allowedRoles: ['admin', 'manager'] },
+    { href: '/accounts-receivable', label: 'Accounts Receivable', icon: '💰', desc: 'Customer Payments', allowedRoles: ['admin', 'accountant'] },
+    { href: '/accounts-payable', label: 'Accounts Payable', icon: '💳', desc: 'Supplier Payments', allowedRoles: ['admin', 'accountant'] },
+    { href: '/expenses', label: 'Track Expenses', icon: '💸', desc: 'Expense Management', allowedRoles: ['admin', 'manager', 'accountant'] },
+    { href: '/import', label: 'Data Import', icon: '📥', desc: 'Upload Sales/Purchase data', allowedRoles: ['admin'] },
+    { href: '/dashboard', label: 'View Dashboard', icon: '📊', desc: 'Analytics', allowedRoles: ['admin', 'manager', 'accountant'] },
   ];
+
+  if (authLoading || (!user)) {
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -169,15 +175,16 @@ export default function HomePage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {modules.map((module) => (
-            <Link
-              key={module.href}
-              href={module.href}
-              className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100 hover:border-gray-200 cursor-pointer"
-            >
-              <div className="text-3xl mb-3">{module.icon}</div>
-              <h3 className="font-semibold text-gray-900 text-lg">{module.label}</h3>
-              <p className="text-gray-500 text-sm mt-1">{module.desc}</p>
-            </Link>
+            <RoleGuard key={module.href} allowedRoles={module.allowedRoles}>
+              <Link
+                href={module.href}
+                className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow border border-gray-100 hover:border-gray-200 cursor-pointer block h-full"
+              >
+                <div className="text-3xl mb-3">{module.icon}</div>
+                <h3 className="font-semibold text-gray-900 text-lg">{module.label}</h3>
+                <p className="text-gray-500 text-sm mt-1">{module.desc}</p>
+              </Link>
+            </RoleGuard>
           ))}
         </div>
       </div>

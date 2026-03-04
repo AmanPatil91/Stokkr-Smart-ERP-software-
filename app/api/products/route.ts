@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireApiAuth } from '@/utils/supabase/api-auth';
 
 export async function POST(request: Request) {
+  const { authorized, response } = await requireApiAuth(['manager', 'admin']);
+  if (!authorized) return response;
+
   try {
     const {
       name, sku, description, hsnCode, category, gstRate, cgstRate, sgstRate, igstRate,
@@ -34,6 +38,9 @@ export async function POST(request: Request) {
 }
 
 export async function GET() {
+  const { authorized, response } = await requireApiAuth(); // Require auth for reading
+  if (!authorized) return response;
+
   try {
     const products = await prisma.product.findMany({
       include: {

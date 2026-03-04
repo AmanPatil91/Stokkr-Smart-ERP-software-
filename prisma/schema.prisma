@@ -237,3 +237,11 @@ model PurchaseTransaction {
 
   @@unique([date, supplierName, productName, amount], name: "purchase_dedup")
 }
+
+model Profile {
+  id        String   @id @default(uuid()) @db.Uuid // maps to auth.users.id
+  name      String?
+  role      String   @default("sales") // admin, manager, sales, accountant
+  createdAt DateTime @default(now())
+}
+

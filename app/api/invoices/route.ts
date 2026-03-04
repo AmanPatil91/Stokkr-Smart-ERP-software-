@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { calculateFifoCogs, reduceBatchQuantities } from '@/lib/cogsCalculator';
+import { requireApiAuth } from '@/utils/supabase/api-auth';
 
 export async function POST(request: Request) {
+  const { authorized, response } = await requireApiAuth(['sales', 'admin']);
+  if (!authorized) return response;
+
   try {
     const body = await request.json();
     const { partyId, items, isInterState, paymentMode } = body;

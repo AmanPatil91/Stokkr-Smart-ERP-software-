@@ -12,6 +12,8 @@
   },
   "dependencies": {
     "@prisma/client": "6.15.0",
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.98.0",
     "drizzle-zod": "^0.8.3",
     "firebase": "^12.7.0",
     "next": "^15.5.9",
