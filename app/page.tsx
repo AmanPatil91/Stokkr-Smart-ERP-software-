@@ -68,8 +68,14 @@ export default function HomePage() {
     { href: '/dashboard', label: 'View Dashboard', icon: '📊', desc: 'Analytics', allowedRoles: ['admin', 'manager', 'accountant'] },
   ];
 
-  if (authLoading || (!user)) {
+  // Show loading only during actual auth check
+  if (authLoading) {
     return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Loading...</div>
+  }
+
+  // If no user after auth check completes, show redirecting state (redirect fires from useEffect above)
+  if (!user) {
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">Redirecting to login...</div>
   }
 
   return (
