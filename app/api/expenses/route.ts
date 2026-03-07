@@ -47,24 +47,52 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create expense
-    const expense = await prisma.expense.create({
-      data: {
-        category,
-        title,
-        amount: amountNum,
-        expenseDate: new Date(expenseDate),
-        paymentMode,
-        referenceNumber: body.referenceNumber || null,
-        notes: body.notes || null,
-      },
+    // Use transaction for atomic expense & ledger creation
+    const expense = await prisma.$transaction(async (tx) => {
+      const newExpense = await tx.expense.create({
+        data: {
+          category,
+          title,
+          amount: amountNum,
+          expenseDate: new Date(expenseDate),
+          paymentMode,
+          referenceNumber: body.referenceNumber || null,
+          notes: body.notes || null,
+        },
+      });
+
+      // Find or create an internal party to satisfy the LedgerTransaction partyId requirement
+      let expenseParty = await tx.party.findFirst({
+        where: { name: 'Internal Expenses' },
+      });
+      if (!expenseParty) {
+        expenseParty = await tx.party.create({
+          data: {
+            name: 'Internal Expenses',
+            partyType: 'INTERNAL',
+          },
+        });
+      }
+
+      await tx.ledgerTransaction.create({
+        data: {
+          partyId: expenseParty.id,
+          transactionType: 'DEBIT',
+          amount: amountNum,
+          description: `Expense: ${category} - ${title}`,
+          paymentMode: paymentMode,
+          referenceNumber: body.referenceNumber || null,
+        },
+      });
+
+      return newExpense;
     });
 
     return NextResponse.json(expense, { status: 201 });
   } catch (error) {
-    console.error('Error creating expense:', error);
+    console.error('API Error (Expense Transaction Rolled Back):', error);
     return NextResponse.json(
-      { error: 'Failed to create expense' },
+      { error: 'Transaction failed. No changes were saved.' },
       { status: 500 }
     );
   }

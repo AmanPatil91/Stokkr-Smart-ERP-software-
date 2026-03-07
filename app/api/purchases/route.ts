@@ -58,7 +58,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ message: 'Purchase invoice created successfully' }, { status: 201 });
   } catch (error) {
-    console.error('API Error:', error);
-    return NextResponse.json({ error: 'Failed to create purchase invoice' }, { status: 500 });
+    console.error('API Error (Purchase Transaction Rolled Back):', error);
+    return NextResponse.json({ error: 'Transaction failed. No changes were saved.' }, { status: 500 });
   }
 }

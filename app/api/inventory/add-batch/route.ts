@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { productId, batchNo, cost, supplierId, quantity, expiry } = body;
+    const { productId, cost, supplierId, quantity, expiry } = body;
 
     const expiryDate = new Date(expiry);
 
@@ -12,11 +12,32 @@ export async function POST(request: Request) {
     const parsedCost = parseFloat(cost);
 
     await prisma.$transaction(async (tx) => {
+      // Auto-generate Batch Number
+      const lastBatch = await tx.batch.findFirst({
+        where: {
+          batchNumber: {
+            startsWith: 'BATCH',
+          },
+        },
+        orderBy: {
+          batchNumber: 'desc',
+        },
+      });
+
+      let nextBatchNo = 'BATCH001';
+      if (lastBatch && lastBatch.batchNumber) {
+        const match = lastBatch.batchNumber.match(/^BATCH(\d+)$/);
+        if (match && match[1]) {
+          const nextNum = parseInt(match[1], 10) + 1;
+          nextBatchNo = `BATCH${nextNum.toString().padStart(3, '0')}`;
+        }
+      }
+
       const batchTotal = parsedCost * parsedQuantity;
-      
+
       const newBatch = await tx.batch.create({
         data: {
-          batchNumber: batchNo,
+          batchNumber: nextBatchNo,
           expiryDate: expiryDate,
           quantity: parsedQuantity,
           costPerItem: parsedCost,
@@ -30,7 +51,7 @@ export async function POST(request: Request) {
           batchId: newBatch.id,
           transactionType: 'IN',
           quantity: parsedQuantity,
-          notes: `Added new batch ${batchNo} from supplier ${supplierId}`,
+          notes: `Added new batch ${nextBatchNo} from supplier ${supplierId}`,
         },
       });
 
@@ -39,7 +60,7 @@ export async function POST(request: Request) {
           partyId: supplierId,
           transactionType: 'CREDIT',
           amount: batchTotal,
-          description: `Purchase from supplier for batch ${batchNo}`,
+          description: `Purchase from supplier for batch ${nextBatchNo}`,
         },
       });
 
@@ -56,7 +77,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ message: 'Batch added successfully' }, { status: 201 });
   } catch (error) {
-    console.error('API Error:', error);
-    return NextResponse.json({ error: 'Failed to add batch.' }, { status: 500 });
+    console.error('API Error (Batch Transaction Rolled Back):', error);
+    return NextResponse.json({ error: 'Transaction failed. No changes were saved.' }, { status: 500 });
   }
 }

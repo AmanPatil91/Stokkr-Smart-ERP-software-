@@ -3,13 +3,23 @@ import { prisma } from '@/lib/prisma';
 
 export async function POST(request: Request) {
   try {
-    const { name, partyType, gstin } = await request.json();
+    const { name, partyType, gstin, contactNumber, email } = await request.json();
+
+    // Mobile Number Validation Check
+    if (contactNumber && !/^[0-9]{10}$/.test(contactNumber)) {
+      return NextResponse.json(
+        { error: 'Mobile number must contain exactly 10 digits.' },
+        { status: 400 }
+      );
+    }
 
     const newParty = await prisma.party.create({
       data: {
         name,
         partyType,
         gstin,
+        contactNumber,
+        email,
       },
     });
 

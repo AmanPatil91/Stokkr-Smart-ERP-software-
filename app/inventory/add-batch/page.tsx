@@ -25,7 +25,7 @@ export default function AddStockPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [suppliers, setSuppliers] = useState<Party[]>([]);
   const [stockSummary, setStockSummary] = useState<StockItem[]>([]);
-  
+
   const [selectedProductId, setSelectedProductId] = useState('');
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
   const [batchNo, setBatchNo] = useState('');
@@ -36,19 +36,25 @@ export default function AddStockPage() {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   const fetchInitialData = async () => {
     setInitialLoading(true);
     try {
-      const [productsResponse, partiesResponse, stockResponse] = await Promise.all([
+      const [productsResponse, partiesResponse, stockResponse, nextBatchResponse] = await Promise.all([
         fetch('/api/products'),
         fetch('/api/parties'),
         fetch('/api/reports/stock-summary'),
+        fetch('/api/inventory/next-batch'),
       ]);
 
       const productsData = await productsResponse.json();
       const partiesData = await partiesResponse.json();
       const stockData = await stockResponse.json();
+      const nextBatchData = await nextBatchResponse.json();
+
+      if (nextBatchResponse.ok && nextBatchData.nextId) {
+        setBatchNo(nextBatchData.nextId);
+      }
 
       if (Array.isArray(productsData)) {
         setProducts(productsData);
@@ -63,14 +69,14 @@ export default function AddStockPage() {
         setError('Invalid parties data received from API.');
         setSuppliers([]);
       }
-      
+
       if (Array.isArray(stockData)) {
         setStockSummary(stockData);
       } else {
         setError('Invalid stock summary data received from API.');
         setStockSummary([]);
       }
-      
+
       if (productsData.length > 0) {
         setSelectedProductId(productsData[0].id);
       }
@@ -100,12 +106,11 @@ export default function AddStockPage() {
       const response = await fetch('/api/inventory/add-batch', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          productId: selectedProductId, 
-          batchNo, 
+        body: JSON.stringify({
+          productId: selectedProductId,
           quantity: parsedQuantity,
           cost: parsedCost,
-          supplierId: selectedSupplierId, 
+          supplierId: selectedSupplierId,
           expiry: new Date(expiry).toISOString(),
         }),
       });
@@ -115,14 +120,14 @@ export default function AddStockPage() {
       }
 
       await fetchInitialData();
-      
+
       setSelectedProductId('');
       setSelectedSupplierId('');
       setBatchNo('');
       setQuantity('');
       setCost('');
       setExpiry('');
-      
+
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -181,14 +186,12 @@ export default function AddStockPage() {
                 <label className="block text-gray-900 font-semibold mb-2">Batch Number</label>
                 <input
                   type="text"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={batchNo}
-                  onChange={(e) => setBatchNo(e.target.value)}
-                  placeholder="e.g., BATCH-001"
-                  required
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none bg-gray-100 text-gray-500 cursor-not-allowed"
+                  value={batchNo || "Generating..."}
+                  readOnly
                 />
               </div>
-              
+
               <div>
                 <label className="block text-gray-900 font-semibold mb-2">Quantity</label>
                 <input
@@ -199,7 +202,7 @@ export default function AddStockPage() {
                   required
                 />
               </div>
-              
+
               <div>
                 <label className="block text-gray-900 font-semibold mb-2">Cost per Item</label>
                 <input

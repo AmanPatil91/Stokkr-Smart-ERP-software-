@@ -33,10 +33,12 @@ export interface CogsCalculationResult {
  */
 export async function calculateFifoCogs(
   productId: string,
-  quantityToSell: number
+  quantityToSell: number,
+  tx?: any
 ): Promise<CogsCalculationResult> {
+  const db = tx || prisma;
   // Fetch all available batches for this product, ordered by creation date (oldest first)
-  const batches = await prisma.batch.findMany({
+  const batches = await db.batch.findMany({
     where: { productId },
     orderBy: { id: 'asc' }, // Assuming ID is created in insertion order
     select: {
@@ -84,11 +86,13 @@ export async function calculateFifoCogs(
  * @param batchUsage - Array of batch usage from COGS calculation
  */
 export async function reduceBatchQuantities(
-  batchUsage: Array<{ batchId: string; quantityUsed: number }>
+  batchUsage: Array<{ batchId: string; quantityUsed: number }>,
+  tx?: any
 ) {
+  const db = tx || prisma;
   for (const usage of batchUsage) {
     // Reduce the batch quantity by the amount used
-    await prisma.batch.update({
+    await db.batch.update({
       where: { id: usage.batchId },
       data: {
         quantity: {

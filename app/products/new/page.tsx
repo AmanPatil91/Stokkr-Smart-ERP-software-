@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { hsnCategories, getHsnCodesByCategory, HSNCategory, HSNCode, getHsnData } from '@/lib/hsn-data';
 
@@ -10,6 +10,22 @@ export default function AddProductPage() {
   // Basic Info
   const [productName, setProductName] = useState('');
   const [productId, setProductId] = useState('');
+
+  // Fetch Next Product ID
+  useEffect(() => {
+    const fetchNextId = async () => {
+      try {
+        const response = await fetch('/api/products/next-id');
+        if (response.ok) {
+          const data = await response.json();
+          setProductId(data.nextId);
+        }
+      } catch (err) {
+        console.error('Failed to fetch next product ID', err);
+      }
+    };
+    fetchNextId();
+  }, []);
 
   // HSN & Tax Logic
   const [selectedCategory, setSelectedCategory] = useState<string>('');
@@ -135,12 +151,11 @@ export default function AddProductPage() {
                   <label className="block text-gray-900 font-semibold mb-2">Product ID (SKU)</label>
                   <input
                     type="text"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    value={productId}
-                    onChange={(e) => setProductId(e.target.value)}
-                    required
-                    placeholder="e.g., SKU-001"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none bg-gray-100 text-gray-500 cursor-not-allowed"
+                    value={productId || "Generating..."}
+                    readOnly
                   />
+                  <p className="text-xs text-gray-500 mt-1">Generated automatically (e.g., PROD001)</p>
                 </div>
               </div>
 

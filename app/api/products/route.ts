@@ -8,14 +8,37 @@ export async function POST(request: Request) {
 
   try {
     const {
-      name, sku, description, hsnCode, category, gstRate, cgstRate, sgstRate, igstRate,
+      name, description, hsnCode, category, gstRate, cgstRate, sgstRate, igstRate,
       price, cost, expiryAlertDays, lowStockAlertQty
     } = await request.json();
+
+    // Auto-generate Product ID (SKU)
+    // Find the latest product that starts with PROD to determine the next number
+    const lastProduct = await prisma.product.findFirst({
+      where: {
+        sku: {
+          startsWith: 'PROD',
+        },
+      },
+      orderBy: {
+        sku: 'desc',
+      },
+    });
+
+    let newSku = 'PROD001';
+    if (lastProduct && lastProduct.sku) {
+      // Extract the numeric part, assuming format PRODXXX
+      const match = lastProduct.sku.match(/^PROD(\d+)$/);
+      if (match && match[1]) {
+        const nextNum = parseInt(match[1], 10) + 1;
+        newSku = `PROD${nextNum.toString().padStart(3, '0')}`;
+      }
+    }
 
     const newProduct = await prisma.product.create({
       data: {
         name,
-        sku,
+        sku: newSku,
         description,
         hsnCode,
         category,

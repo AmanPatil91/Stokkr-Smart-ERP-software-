@@ -11,91 +11,84 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { partyId, items, isInterState, paymentMode } = body;
 
-    // Fetch products to calculate proper tax rates
-    const productIds = items.map((i: any) => i.productId);
-    const products = await prisma.product.findMany({
-      where: { id: { in: productIds } }
-    });
-    const productMap = new Map(products.map((p: any) => [p.id, p]));
-
-    let calculatedSubTotal = 0;
-    let calculatedTaxAmount = 0;
-
-    // Calculate COGS for each item using FIFO method
-    const itemsWithCogs = await Promise.all(
-      items.map(async (item: any) => {
-        const cogsResult = await calculateFifoCogs(item.productId, item.quantity);
-
-        const subtotal = item.quantity * item.pricePerItem;
-        const product = productMap.get(item.productId);
-        const gstRate = product?.gstRate ? Number(product.gstRate) : 0;
-        const itemTaxAmount = (subtotal * gstRate) / 100;
-
-        let cgstAmount = 0;
-        let sgstAmount = 0;
-        let igstAmount = 0;
-
-        if (gstRate > 0) {
-          if (isInterState) {
-            igstAmount = itemTaxAmount;
-          } else {
-            cgstAmount = itemTaxAmount / 2;
-            sgstAmount = itemTaxAmount / 2;
-          }
-        }
-
-        calculatedSubTotal += subtotal;
-        calculatedTaxAmount += itemTaxAmount;
-
-        return {
-          ...item,
-          subtotal,
-          gstRate,
-          cgstAmount,
-          sgstAmount,
-          igstAmount,
-          taxAmount: itemTaxAmount,
-          cogsPerItem: cogsResult.cogsPerItem,
-          cogsTotal: cogsResult.cogsTotal,
-          batchUsage: cogsResult.batchUsage,
-        };
-      })
-    );
-
-    // Total COGS for the invoice
-    const totalCogs = itemsWithCogs.reduce((sum, item) => sum + item.cogsTotal, 0);
-
-    // --- STRICT INVENTORY VALIDATION ---
-    // Calculate the current available stock for each requested product using StockTransactions
-    const verificationProductIds = items.map((i: any) => i.productId);
-    const stockTransactions = await prisma.stockTransaction.findMany({
-      where: { productId: { in: verificationProductIds } },
-      select: { productId: true, quantity: true, transactionType: true }
-    });
-
-    const stockMap = new Map<string, number>();
-    stockTransactions.forEach(tx => {
-      const current = stockMap.get(tx.productId) || 0;
-      stockMap.set(tx.productId, tx.transactionType === 'IN' ? current + tx.quantity : current - tx.quantity);
-    });
-
-    // Verify all requested quantities against available stock
-    for (const item of items) {
-      const availableStock = stockMap.get(item.productId) || 0;
-      if (item.quantity > availableStock) {
-        // Fetch product name for a clearer error message
-        const product = await prisma.product.findUnique({ where: { id: item.productId } });
-        const productName = product?.name || 'Unknown Item';
-
-        return NextResponse.json(
-          { error: `Insufficient stock for ${productName}. Available: ${availableStock} units, Requested: ${item.quantity} units.` },
-          { status: 400 }
-        );
-      }
-    }
-    // --- END STRICT INVENTORY VALIDATION ---
-
+    // Use a transaction for ALL operations, including reads, to maintain atomicity and isolated consistency.
     await prisma.$transaction(async (tx) => {
+      // --- STRICT INVENTORY VALIDATION ---
+      const verificationProductIds = items.map((i: any) => i.productId);
+
+      // Fetch products to calculate proper tax rates and get names for errors
+      const products = await tx.product.findMany({
+        where: { id: { in: verificationProductIds } }
+      });
+      const productMap = new Map(products.map((p: any) => [p.id, p]));
+
+      // Calculate the current available stock for each requested product using StockTransactions
+      const stockTransactions = await tx.stockTransaction.findMany({
+        where: { productId: { in: verificationProductIds } },
+        select: { productId: true, quantity: true, transactionType: true }
+      });
+
+      const stockMap = new Map<string, number>();
+      stockTransactions.forEach(stx => {
+        const current = stockMap.get(stx.productId) || 0;
+        stockMap.set(stx.productId, stx.transactionType === 'IN' ? current + stx.quantity : current - stx.quantity);
+      });
+
+      // Verify all requested quantities against available stock inside the transaction
+      for (const item of items) {
+        const availableStock = stockMap.get(item.productId) || 0;
+        if (item.quantity > availableStock) {
+          const productName = productMap.get(item.productId)?.name || 'Unknown Item';
+          // Throwing an error here automatically triggers a rollback of the whole transaction
+          throw new Error(`Insufficient stock for ${productName}. Available: ${availableStock} units, Requested: ${item.quantity} units.|||400`);
+        }
+      }
+      // --- END STRICT INVENTORY VALIDATION ---
+
+      let calculatedSubTotal = 0;
+      let calculatedTaxAmount = 0;
+
+      // Calculate COGS using tx instance
+      const itemsWithCogs = await Promise.all(
+        items.map(async (item: any) => {
+          const cogsResult = await calculateFifoCogs(item.productId, item.quantity, tx);
+
+          const subtotal = item.quantity * item.pricePerItem;
+          const product = productMap.get(item.productId);
+          const gstRate = product?.gstRate ? Number(product.gstRate) : 0;
+          const itemTaxAmount = (subtotal * gstRate) / 100;
+
+          let cgstAmount = 0;
+          let sgstAmount = 0;
+          let igstAmount = 0;
+
+          if (gstRate > 0) {
+            if (isInterState) {
+              igstAmount = itemTaxAmount;
+            } else {
+              cgstAmount = itemTaxAmount / 2;
+              sgstAmount = itemTaxAmount / 2;
+            }
+          }
+
+          calculatedSubTotal += subtotal;
+          calculatedTaxAmount += itemTaxAmount;
+
+          return {
+            ...item,
+            subtotal,
+            gstRate,
+            cgstAmount,
+            sgstAmount,
+            igstAmount,
+            taxAmount: itemTaxAmount,
+            cogsPerItem: cogsResult.cogsPerItem,
+            cogsTotal: cogsResult.cogsTotal,
+            batchUsage: cogsResult.batchUsage,
+          };
+        })
+      );
+
       const newInvoice = await tx.invoice.create({
         data: {
           invoiceNumber: `INV-${Date.now()}`,
@@ -127,9 +120,9 @@ export async function POST(request: Request) {
         })),
       });
 
-      // Reduce batch quantities based on FIFO consumption
+      // Reduce batch quantities based on FIFO consumption inside the atomic tx
       for (const item of itemsWithCogs) {
-        await reduceBatchQuantities(item.batchUsage);
+        await reduceBatchQuantities(item.batchUsage, tx);
       }
 
       await tx.stockTransaction.createMany({
@@ -164,8 +157,15 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({ message: 'Invoice created successfully' }, { status: 201 });
-  } catch (error) {
-    console.error('API Error:', error);
-    return NextResponse.json({ error: 'Failed to create invoice' }, { status: 500 });
+  } catch (error: any) {
+    console.error('API Error (Transaction Rolled Back):', error);
+
+    // Check if it's our custom validation error
+    if (error.message && error.message.includes('|||400')) {
+      const displayMessage = error.message.split('|||400')[0];
+      return NextResponse.json({ error: displayMessage }, { status: 400 });
+    }
+
+    return NextResponse.json({ error: 'Transaction failed. No changes were saved.' }, { status: 500 });
   }
 }

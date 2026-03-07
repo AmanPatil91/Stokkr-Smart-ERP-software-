@@ -1,8 +1,10 @@
 import { createClient } from '@/utils/supabase/server'
 import { NextResponse } from 'next/server'
+import { headers } from 'next/headers'
 
 export async function requireApiAuth(allowedRoles?: string[]) {
     const supabase = await createClient()
+
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {

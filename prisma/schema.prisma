@@ -77,7 +77,7 @@ model Product {
 
 model Batch {
   id                String             @id @default(cuid())
-  batchNumber       String
+  batchNumber       String             @unique
   expiryDate        DateTime
   quantity          Int
   costPerItem       Decimal            @db.Decimal(10, 2)

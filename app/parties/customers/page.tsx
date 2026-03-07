@@ -39,6 +39,13 @@ export default function CustomersPage() {
     setLoading(true);
     setError(null);
 
+    // Mobile Number Validation Check
+    if (contactNumber && !/^[0-9]{10}$/.test(contactNumber)) {
+      setError('Mobile number must contain exactly 10 digits.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch('/api/parties', {
         method: 'POST',
@@ -90,14 +97,17 @@ export default function CustomersPage() {
                 />
               </div>
               <div>
-                <label className="block text-gray-900 font-semibold mb-2">Contact Number</label>
+                <label className="block text-gray-900 font-semibold mb-2">Mobile Number</label>
                 <input
-                  type="text"
+                  type="tel"
+                  pattern="^[0-9]{10}$"
+                  title="Mobile number must contain exactly 10 digits."
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   value={contactNumber}
-                  onChange={(e) => setContactNumber(e.target.value)}
-                  placeholder="e.g., +1234567890"
+                  onChange={(e) => setContactNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  placeholder="e.g., 9876543210"
                 />
+                <p className="text-xs text-gray-500 mt-1">Must be exactly 10 digits.</p>
               </div>
               <div>
                 <label className="block text-gray-900 font-semibold mb-2">Email</label>
